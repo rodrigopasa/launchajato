@@ -130,6 +130,8 @@ export default function TaskDetail() {
     enabled: taskId > 0,
   });
   
+
+  
   // Fetch checklist items for this task
   const { data: checklistItems = [], isLoading: checklistLoading } = useQuery({
     queryKey: [`/api/tasks/${taskId}/checklist`],
