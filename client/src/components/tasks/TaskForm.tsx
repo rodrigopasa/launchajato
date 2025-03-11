@@ -71,6 +71,12 @@ export function TaskForm({ defaultValues, onSubmit, projectId, isLoading = false
     },
   });
 
+  // Fetch all projects
+  const { data: projects } = useQuery({
+    queryKey: ["/api/projects"],
+    enabled: true,
+  });
+
   // Fetch phases for the current project
   const { data: phases } = useQuery({
     queryKey: [`/api/projects/${form.getValues().projectId}/phases`],
