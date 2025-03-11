@@ -180,7 +180,16 @@ export default function ProjectDetail() {
   };
 
   const handleDeleteProject = () => {
-    deleteProjectMutation.mutate();
+    if (deleteConfirmationStep === 1) {
+      setDeleteConfirmationStep(2);
+    } else {
+      deleteProjectMutation.mutate();
+    }
+  };
+  
+  const resetDeleteDialog = () => {
+    setDeleteConfirmationStep(1);
+    setIsDeleteProjectDialogOpen(false);
   };
 
   const handleCreateTask = (data: TaskFormValues) => {
@@ -664,16 +673,28 @@ export default function ProjectDetail() {
       </Dialog>
 
       {/* Delete Project Confirmation */}
-      <AlertDialog open={isDeleteProjectDialogOpen} onOpenChange={setIsDeleteProjectDialogOpen}>
+      <AlertDialog open={isDeleteProjectDialogOpen} onOpenChange={(open) => {
+        if (!open) {
+          resetDeleteDialog();
+        } else {
+          setIsDeleteProjectDialogOpen(open);
+        }
+      }}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+            <AlertDialogTitle>
+              {deleteConfirmationStep === 1 ? "Confirmar exclusão" : "Tem absoluta certeza?"}
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              Tem certeza que deseja excluir o projeto "{project.name}"? Esta ação não pode ser desfeita e todos os dados relacionados serão perdidos.
+              {deleteConfirmationStep === 1 ? (
+                <>Tem certeza que deseja excluir o projeto "{project.name}"? Esta ação não pode ser desfeita e todos os dados relacionados serão perdidos.</>
+              ) : (
+                <>Esta é a última etapa de confirmação. Ao confirmar, o projeto "{project.name}" será permanentemente excluído junto com todas as suas tarefas, arquivos e histórico de atividades.</>
+              )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogCancel onClick={resetDeleteDialog}>Cancelar</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteProject}
               className="bg-red-600 hover:bg-red-700"
@@ -681,7 +702,7 @@ export default function ProjectDetail() {
               {deleteProjectMutation.isPending && (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               )}
-              Excluir
+              {deleteConfirmationStep === 1 ? "Confirmar" : "Sim, excluir projeto"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

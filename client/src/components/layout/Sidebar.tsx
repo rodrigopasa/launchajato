@@ -14,6 +14,7 @@ import {
   Settings,
   ChevronLeft,
   Loader2,
+  BarChart,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
@@ -155,6 +156,14 @@ export default function Sidebar() {
                 collapsed={collapsed}
               >
                 Comunicação
+              </NavItem>
+              <NavItem
+                href="/reports"
+                icon={<BarChart className="h-5 w-5" />}
+                active={location.startsWith("/reports")}
+                collapsed={collapsed}
+              >
+                Relatórios
               </NavItem>
               <NavItem
                 href="/settings"
