@@ -154,8 +154,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/projects", isAuthenticated, async (req: Request, res: Response) => {
     console.log("Corpo da requisição:", req.body);
     try {
+      // Converter strings de data para objetos Date
+      const body = {...req.body};
+      if (body.startDate && typeof body.startDate === 'string') {
+        body.startDate = new Date(body.startDate);
+      }
+      if (body.deadline && typeof body.deadline === 'string') {
+        body.deadline = new Date(body.deadline);
+      }
+      
       const validatedData = insertProjectSchema.parse({
-        ...req.body,
+        ...body,
         createdBy: res.locals.user.id
       });
       
