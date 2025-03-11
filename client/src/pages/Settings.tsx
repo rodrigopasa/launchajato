@@ -64,7 +64,7 @@ export default function Settings() {
     },
     organization: {
       name: "LaunchRocket",
-      logo: null,
+      logo: null as string | null,
     }
   };
 
