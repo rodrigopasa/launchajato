@@ -7,6 +7,7 @@ import MainLayout from "@/components/layout/MainLayout";
 import Dashboard from "@/pages/Dashboard";
 import Projects from "@/pages/Projects";
 import ProjectDetail from "@/pages/ProjectDetail";
+import TaskDetail from "@/pages/TaskDetail";
 import Tasks from "@/pages/Tasks";
 import Team from "@/pages/Team";
 import Files from "@/pages/Files";
@@ -23,6 +24,7 @@ function Router() {
           <Route path="/projects" component={Projects} />
           <Route path="/projects/:id" component={ProjectDetail} />
           <Route path="/tasks" component={Tasks} />
+          <Route path="/tasks/:id" component={TaskDetail} />
           <Route path="/team" component={Team} />
           <Route path="/files" component={Files} />
           <Route path="/communication" component={Communication} />

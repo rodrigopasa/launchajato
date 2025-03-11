@@ -107,8 +107,11 @@ export default function TaskItem({
   };
 
   return (
-    <div className="flex items-center p-3 hover:bg-gray-50 rounded-lg transition-colors duration-150 ease-in-out">
-      <div className="flex-shrink-0 mr-3">
+    <div 
+      className="flex items-center p-3 hover:bg-gray-50 rounded-lg transition-colors duration-150 ease-in-out cursor-pointer"
+      onClick={onViewDetails}
+    >
+      <div className="flex-shrink-0 mr-3" onClick={(e) => e.stopPropagation()}>
         <Checkbox
           checked={isCompleted}
           onCheckedChange={handleCheckboxChange}
@@ -141,7 +144,7 @@ export default function TaskItem({
           <p className="text-xs text-gray-500">{formatDueDate(dueDate)}</p>
         </div>
       </div>
-      <div className="flex-shrink-0 ml-3">
+      <div className="flex-shrink-0 ml-3" onClick={(e) => e.stopPropagation()}>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button className="text-gray-400 hover:text-gray-600 focus:outline-none">
