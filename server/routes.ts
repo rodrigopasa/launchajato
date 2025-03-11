@@ -1111,20 +1111,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json({ message: "Comentário excluído com sucesso" });
   });
 
-  // Create validation middleware
-  function validateRequest(schema: z.ZodSchema) {
-    return (req: Request, res: Response, next: NextFunction) => {
-      try {
-        schema.parse(req.body);
-        next();
-      } catch (error) {
-        if (error instanceof z.ZodError) {
-          return res.status(400).json({ message: "Dados inválidos", errors: error.errors });
-        }
-        next(error);
-      }
-    };
-  }
+  // Validação de requisições movida para middleware/validation.ts
   
   // API para configurações
   app.get("/api/settings", async (req: Request, res: Response) => {
