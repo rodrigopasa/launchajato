@@ -1,6 +1,7 @@
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSidebar } from "@/contexts/SidebarContext";
+// import { useSettings } from "@/contexts/SettingsContext";
 import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -44,6 +45,9 @@ export default function Sidebar() {
   const [location] = useLocation();
   const { user } = useAuth();
   const { collapsed, mobile, mobileOpen, toggleCollapsed, setMobileOpen } = useSidebar();
+  // Usar dados hardcoded para simplificar
+  const organizationName = "LaunchRocket";
+  const organizationLogo = null;
 
   // Fetch recent projects
   const { data: projects, isLoading } = useQuery<any[]>({
@@ -72,7 +76,21 @@ export default function Sidebar() {
         )}
       >
         <div className="p-4 flex items-center justify-between border-b border-gray-800">
-          {!collapsed && <h1 className="text-xl font-semibold">LaunchRocket</h1>}
+          {!collapsed && (
+            <div className="flex items-center">
+              <h1 className="text-xl font-semibold">
+                {organizationLogo ? (
+                  <img 
+                    src={organizationLogo} 
+                    alt="Logo" 
+                    className="h-8 mr-2"
+                  />
+                ) : (
+                  organizationName
+                )}
+              </h1>
+            </div>
+          )}
           <button
             onClick={toggleCollapsed}
             className="text-gray-400 hover:text-white p-1"

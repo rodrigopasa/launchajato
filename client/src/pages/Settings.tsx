@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useSettings } from "@/contexts/SettingsContext";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -121,8 +122,10 @@ export default function Settings() {
         description: "As configurações foram atualizadas com sucesso",
       });
       
-      // Recarregar a página para aplicar as mudanças de tema
-      window.location.reload();
+      // Atualizar o cache de query para refletir as novas configurações
+      queryClient.invalidateQueries({ queryKey: ["/api/settings"] });
+      
+      // Não recarregar a página, já aplicamos as mudanças em tempo real
     },
     onError: (error: Error) => {
       toast({
@@ -183,6 +186,9 @@ export default function Settings() {
       ...themeSettings,
       variant,
     });
+    
+    // Aplica a mudança em tempo real
+    document.documentElement.dataset.variant = variant;
   };
 
   // Manipular mudança de aparência
@@ -191,6 +197,13 @@ export default function Settings() {
       ...themeSettings,
       appearance,
     });
+    
+    // Aplica a mudança em tempo real
+    if (appearance === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else if (appearance === 'light') {
+      document.documentElement.classList.remove('dark');
+    }
   };
 
   // Manipular mudança de arredondamento
@@ -199,14 +212,26 @@ export default function Settings() {
       ...themeSettings,
       radius,
     });
+    
+    // Aplica a mudança em tempo real
+    document.documentElement.style.setProperty('--radius', radius + 'rem');
   };
 
+  // Acessar o contexto de configurações
+  const settingsContext = useSettings();
+  
   // Manipular mudança de nome da organização
   const handleOrgNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newName = e.target.value;
     setOrgSettings({
       ...orgSettings,
-      name: e.target.value,
+      name: newName,
     });
+    
+    // Atualizar o nome da organização em tempo real em toda a aplicação
+    if (settingsContext && settingsContext.updateOrganizationName) {
+      settingsContext.updateOrganizationName(newName);
+    }
   };
 
   // Manipular escolha de arquivo de logo
