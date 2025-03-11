@@ -112,18 +112,7 @@ export default function Settings() {
   // Mutation para salvar configurações
   const saveSettingsMutation = useMutation<any, Error, typeof defaultSettings>({
     mutationFn: async (data) => {
-      const response = await fetch("/api/settings", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-        credentials: "include"
-      });
-      
-      if (!response.ok) {
-        const text = await response.text();
-        throw new Error(`${response.status}: ${text || response.statusText}`);
-      }
-      
+      const response = await apiRequest("PUT", "/api/settings", data);
       return response.json();
     },
     onSuccess: () => {
@@ -147,9 +136,11 @@ export default function Settings() {
   // Mutation para fazer upload do logo
   const uploadLogoMutation = useMutation<any, Error, FormData>({
     mutationFn: async (formData: FormData) => {
+      // Nota: Para FormData, não usamos apiRequest diretamente pois ele define o Content-Type como application/json
       const response = await fetch("/api/settings/logo", {
         method: "POST",
         body: formData,
+        credentials: "include"
       });
       
       if (!response.ok) {
