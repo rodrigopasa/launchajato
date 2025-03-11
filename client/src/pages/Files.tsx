@@ -56,7 +56,7 @@ export default function Files() {
               <SelectValue placeholder="Todos os projetos" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Todos os projetos</SelectItem>
+              <SelectItem value="0">Todos os projetos</SelectItem>
               {projects?.map((project: any) => (
                 <SelectItem key={project.id} value={project.id.toString()}>
                   {project.name}
@@ -111,7 +111,7 @@ export default function Files() {
                 <div className="text-center py-8">
                   <p className="text-gray-500 mb-4">Selecione um projeto para visualizar seus arquivos.</p>
                   <Select 
-                    value={selectedProjectId?.toString() || ""} 
+                    value={selectedProjectId?.toString() || "0"} 
                     onValueChange={(value) => setSelectedProjectId(value ? parseInt(value) : null)}
                   >
                     <SelectTrigger className="w-[250px] mx-auto">
