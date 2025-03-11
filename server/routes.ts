@@ -7,7 +7,7 @@ import { upload, deleteFile } from "./middleware/upload";
 import { z } from "zod";
 import fs from "fs";
 import path from "path";
-// Função de validação implementada localmente
+import { validateRequest } from "./middleware/validation";
 import { insertUserSchema, insertProjectSchema, insertTaskSchema, insertPhaseSchema, insertChecklistItemSchema } from "@shared/schema";
 
 import MemoryStore from "memorystore";
@@ -1113,7 +1113,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Create validation middleware
   function validateRequest(schema: z.ZodSchema) {
-    return (req: Request, res: Response, next: any) => {
+    return (req: Request, res: Response, next: NextFunction) => {
       try {
         schema.parse(req.body);
         next();
@@ -1153,8 +1153,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/settings", isAuthenticated, async (req: Request, res: Response) => {
     try {
       const settings = req.body;
-      
-      // Retorna as configurações salvas (removendo a parte que manipula o arquivo)
+      // Aqui seria implementada a lógica para salvar as configurações em um banco de dados
+      // Por enquanto, apenas retornamos as configurações recebidas
       res.json(settings);
     } catch (error) {
       console.error("Erro ao salvar configurações:", error);
