@@ -30,6 +30,22 @@ import {
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Input } from "@/components/ui/input";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { ProjectForm, type ProjectFormValues } from "@/components/projects/ProjectForm";
 import { TaskForm, type TaskFormValues } from "@/components/tasks/TaskForm";
 import TaskItem from "@/components/dashboard/TaskItem";
@@ -39,6 +55,9 @@ import FileList from "@/components/files/FileList";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useParams, Link } from "wouter";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
 import {
   Calendar,
   Clock,
@@ -49,6 +68,7 @@ import {
   Plus,
   Trash2,
   Users,
+  UserPlus,
 } from "lucide-react";
 
 export default function ProjectDetail() {
@@ -61,6 +81,7 @@ export default function ProjectDetail() {
   const [deleteConfirmationStep, setDeleteConfirmationStep] = useState(1);
   const [isNewTaskDialogOpen, setIsNewTaskDialogOpen] = useState(false);
   const [isUploadFileDialogOpen, setIsUploadFileDialogOpen] = useState(false);
+  const [isAddMemberDialogOpen, setIsAddMemberDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("overview");
 
   // Fetch project details
