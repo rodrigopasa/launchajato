@@ -194,7 +194,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const projectId = parseInt(req.params.id);
     
     try {
-      const updatedProject = await storage.updateProject(projectId, req.body);
+      // Converter strings de data para objetos Date
+      const body = {...req.body};
+      if (body.startDate && typeof body.startDate === 'string') {
+        body.startDate = new Date(body.startDate);
+      }
+      if (body.deadline && typeof body.deadline === 'string') {
+        body.deadline = new Date(body.deadline);
+      }
+      
+      const updatedProject = await storage.updateProject(projectId, body);
       
       if (!updatedProject) {
         return res.status(404).json({ message: "Projeto não encontrado" });
@@ -211,6 +220,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json(updatedProject);
     } catch (error) {
+      console.error("Erro ao atualizar projeto:", error);
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Dados inválidos", errors: error.errors });
       }
@@ -537,8 +547,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const projectId = parseInt(req.params.projectId);
     
     try {
+      // Converter strings de data para objetos Date
+      const body = {...req.body};
+      if (body.dueDate && typeof body.dueDate === 'string') {
+        body.dueDate = new Date(body.dueDate);
+      }
+      
       const validatedData = insertTaskSchema.parse({
-        ...req.body,
+        ...body,
         projectId
       });
       
@@ -555,6 +571,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.status(201).json(task);
     } catch (error) {
+      console.error("Erro ao criar tarefa:", error);
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Dados inválidos", errors: error.errors });
       }
@@ -580,7 +597,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
     
     try {
-      const updatedTask = await storage.updateTask(taskId, req.body);
+      // Converter strings de data para objetos Date
+      const body = {...req.body};
+      if (body.dueDate && typeof body.dueDate === 'string') {
+        body.dueDate = new Date(body.dueDate);
+      }
+      
+      const updatedTask = await storage.updateTask(taskId, body);
       
       if (!updatedTask) {
         return res.status(404).json({ message: "Tarefa não encontrada" });
@@ -598,6 +621,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json(updatedTask);
     } catch (error) {
+      console.error("Erro ao atualizar tarefa:", error);
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Dados inválidos", errors: error.errors });
       }
