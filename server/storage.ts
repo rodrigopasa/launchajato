@@ -90,6 +90,7 @@ export class MemStorage implements IStorage {
   private files: Map<number, File>;
   private activities: Map<number, Activity>;
   private comments: Map<number, Comment>;
+  private integrations: Map<number, Integration>;
   
   private userIdCounter: number;
   private projectIdCounter: number;
@@ -100,6 +101,7 @@ export class MemStorage implements IStorage {
   private fileIdCounter: number;
   private activityIdCounter: number;
   private commentIdCounter: number;
+  private integrationIdCounter: number;
 
   constructor() {
     this.users = new Map();
@@ -111,6 +113,7 @@ export class MemStorage implements IStorage {
     this.files = new Map();
     this.activities = new Map();
     this.comments = new Map();
+    this.integrations = new Map();
     
     this.userIdCounter = 1;
     this.projectIdCounter = 1;
@@ -121,6 +124,7 @@ export class MemStorage implements IStorage {
     this.fileIdCounter = 1;
     this.activityIdCounter = 1;
     this.commentIdCounter = 1;
+    this.integrationIdCounter = 1;
     
     // Add default admin user
     this.createUser({
@@ -418,6 +422,50 @@ export class MemStorage implements IStorage {
   
   async deleteComment(id: number): Promise<boolean> {
     return this.comments.delete(id);
+  }
+
+  // Integrations methods
+  async getIntegration(id: number): Promise<Integration | undefined> {
+    return this.integrations.get(id);
+  }
+  
+  async getIntegrationByType(type: string): Promise<Integration | undefined> {
+    return Array.from(this.integrations.values())
+      .find(integration => integration.type === type);
+  }
+  
+  async getAllIntegrations(): Promise<Integration[]> {
+    return Array.from(this.integrations.values());
+  }
+  
+  async createIntegration(insertIntegration: InsertIntegration): Promise<Integration> {
+    const now = new Date();
+    const id = this.integrationIdCounter++;
+    const integration: Integration = { 
+      ...insertIntegration, 
+      id, 
+      createdAt: now, 
+      updatedAt: now 
+    };
+    this.integrations.set(id, integration);
+    return integration;
+  }
+  
+  async updateIntegration(id: number, data: Partial<InsertIntegration>): Promise<Integration | undefined> {
+    const integration = this.integrations.get(id);
+    if (!integration) return undefined;
+    
+    const updatedIntegration = { 
+      ...integration, 
+      ...data, 
+      updatedAt: new Date() 
+    };
+    this.integrations.set(id, updatedIntegration);
+    return updatedIntegration;
+  }
+  
+  async deleteIntegration(id: number): Promise<boolean> {
+    return this.integrations.delete(id);
   }
 }
 
