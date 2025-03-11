@@ -884,6 +884,43 @@ export default function ProjectDetail() {
                     </FormItem>
                   )}
                 />
+                
+                <FormField
+                  control={form.control}
+                  name="profession"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Profissão</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                        disabled={addMemberMutation.isPending}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione a profissão" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="developer">Desenvolvedor</SelectItem>
+                          <SelectItem value="designer">Designer</SelectItem>
+                          <SelectItem value="social_media">Social Media</SelectItem>
+                          <SelectItem value="marketing">Marketing</SelectItem>
+                          <SelectItem value="content_writer">Redator de Conteúdo</SelectItem>
+                          <SelectItem value="project_manager">Gerente de Projeto</SelectItem>
+                          <SelectItem value="qa_tester">QA Tester</SelectItem>
+                          <SelectItem value="devops">DevOps</SelectItem>
+                          <SelectItem value="product_owner">Product Owner</SelectItem>
+                          <SelectItem value="data_analyst">Analista de Dados</SelectItem>
+                          <SelectItem value="ui_ux">UI/UX Designer</SelectItem>
+                          <SelectItem value="business_analyst">Analista de Negócios</SelectItem>
+                          <SelectItem value="other">Outro</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
                 <Button type="submit" className="w-full" disabled={addMemberMutation.isPending}>
                   {addMemberMutation.isPending && (
