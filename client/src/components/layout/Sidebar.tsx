@@ -72,7 +72,7 @@ export default function Sidebar() {
         )}
       >
         <div className="p-4 flex items-center justify-between border-b border-gray-800">
-          {!collapsed && <h1 className="text-xl font-semibold">LaunchPro</h1>}
+          {!collapsed && <h1 className="text-xl font-semibold">LaunchRocket</h1>}
           <button
             onClick={toggleCollapsed}
             className="text-gray-400 hover:text-white p-1"

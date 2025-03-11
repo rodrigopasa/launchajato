@@ -63,7 +63,7 @@ export default function Settings() {
       radius: "0.5",
     },
     organization: {
-      name: "Sistema de Gestão de Projetos",
+      name: "LaunchRocket",
       logo: null,
     }
   };

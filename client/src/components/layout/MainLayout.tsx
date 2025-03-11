@@ -3,6 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useLocation, useRouter } from "wouter";
 import Sidebar from "./Sidebar";
 import MobileNavbar from "./MobileNavbar";
+import Footer from "./Footer";
 import { useSidebar } from "@/contexts/SidebarContext";
 import { cn } from "@/lib/utils";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -102,7 +103,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
           <DialogHeader>
             <DialogTitle>Acesso ao Sistema</DialogTitle>
             <DialogDescription>
-              Entre com suas credenciais para acessar o LaunchPro.
+              Entre com suas credenciais para acessar o LaunchRocket.
             </DialogDescription>
           </DialogHeader>
           <LoginForm onSubmit={login} isLoading={isLoading} />
@@ -114,13 +115,20 @@ export default function MainLayout({ children }: MainLayoutProps) {
         {mobile && <MobileNavbar />}
         <main
           className={cn(
-            "flex-1 overflow-y-auto bg-gray-100",
+            "flex-1 overflow-y-auto bg-gray-100 flex flex-col",
             mobile ? "pt-16" : "pt-0",
             !mobile && collapsed ? "ml-20" : !mobile ? "ml-64" : "ml-0",
             "transition-all duration-300 ease-in-out"
           )}
         >
-          {isAuthenticated && children}
+          {isAuthenticated && (
+            <>
+              <div className="flex-grow">
+                {children}
+              </div>
+              <Footer />
+            </>
+          )}
         </main>
       </div>
     </>
