@@ -27,15 +27,15 @@ interface NavItemProps {
 const NavItem = ({ href, icon, children, active, collapsed }: NavItemProps) => {
   return (
     <Link href={href}>
-      <a
+      <div
         className={cn(
-          "flex items-center px-4 py-3 text-gray-300 rounded-lg mb-1 transition-colors",
+          "flex items-center px-4 py-3 text-gray-300 rounded-lg mb-1 transition-colors cursor-pointer",
           active ? "bg-gray-800" : "hover:bg-gray-800"
         )}
       >
         <span className="w-5 h-5">{icon}</span>
         {!collapsed && <span className="ml-3">{children}</span>}
-      </a>
+      </div>
     </Link>
   );
 };
