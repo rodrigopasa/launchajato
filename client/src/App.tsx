@@ -15,6 +15,7 @@ import Communication from "@/pages/Communication";
 import Settings from "@/pages/Settings";
 import Reports from "@/pages/Reports";
 import ChatbotSettings from "@/pages/ChatbotSettings";
+import Integrations from "@/pages/Integrations";
 import { AuthProvider } from "./contexts/AuthContext";
 import { SidebarProvider } from "./contexts/SidebarContext";
 
@@ -34,6 +35,7 @@ function Router() {
           <Route path="/reports" component={Reports} />
           <Route path="/settings" component={Settings} />
           <Route path="/chatbot" component={ChatbotSettings} />
+          <Route path="/integrations" component={Integrations} />
           <Route component={NotFound} />
         </Switch>
       </MainLayout>

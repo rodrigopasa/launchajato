@@ -16,6 +16,7 @@ import {
   Loader2,
   BarChart,
   MessagesSquare,
+  Link2,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
@@ -182,6 +183,16 @@ export default function Sidebar() {
               >
                 WhatsApp ChatBot
               </NavItem>
+              {user?.role === 'admin' && (
+                <NavItem
+                  href="/integrations"
+                  icon={<Link2 className="h-5 w-5" />}
+                  active={location.startsWith("/integrations")}
+                  collapsed={collapsed}
+                >
+                  Integrações
+                </NavItem>
+              )}
             </nav>
           </div>
 
