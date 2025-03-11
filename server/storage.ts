@@ -1,11 +1,11 @@
 import {
   users, projects, projectMembers, phases, 
-  tasks, checklistItems, files, activities, comments,
+  tasks, checklistItems, files, activities, comments, integrations,
   type User, type InsertUser, type Project, type InsertProject,
   type ProjectMember, type InsertProjectMember, type Phase, type InsertPhase,
   type Task, type InsertTask, type ChecklistItem, type InsertChecklistItem,
   type File, type InsertFile, type Activity, type InsertActivity,
-  type Comment, type InsertComment
+  type Comment, type InsertComment, type Integration, type InsertIntegration
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, inArray } from "drizzle-orm";
