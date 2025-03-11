@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, pgEnum } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, pgEnum, jsonb } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -8,6 +8,7 @@ export const projectStatusEnum = pgEnum('project_status', ['planning', 'in_progr
 export const taskPriorityEnum = pgEnum('task_priority', ['low', 'medium', 'high']);
 export const taskStatusEnum = pgEnum('task_status', ['todo', 'in_progress', 'review', 'completed']);
 export const professionEnum = pgEnum('profession', ['developer', 'designer', 'social_media', 'marketing', 'content_writer', 'project_manager', 'qa_tester', 'devops', 'product_owner', 'data_analyst', 'ui_ux', 'business_analyst', 'other']);
+export const integrationTypeEnum = pgEnum('integration_type', ['whatsapp', 'email', 'sms', 'other']);
 
 // Users table
 export const users = pgTable("users", {
@@ -112,6 +113,18 @@ export const comments = pgTable("comments", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// System Integrations table
+export const integrations = pgTable("integrations", {
+  id: serial("id").primaryKey(),
+  type: integrationTypeEnum("type").notNull(),
+  name: text("name").notNull(),
+  enabled: boolean("enabled").notNull().default(false),
+  credentials: jsonb("credentials"),
+  configuredBy: integer("configured_by").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
@@ -192,6 +205,14 @@ export const insertCommentSchema = createInsertSchema(comments).pick({
   content: true,
 });
 
+export const insertIntegrationSchema = createInsertSchema(integrations).pick({
+  type: true,
+  name: true,
+  enabled: true,
+  credentials: true,
+  configuredBy: true,
+});
+
 // Types
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
@@ -219,3 +240,6 @@ export type Activity = typeof activities.$inferSelect;
 
 export type InsertComment = z.infer<typeof insertCommentSchema>;
 export type Comment = typeof comments.$inferSelect;
+
+export type InsertIntegration = z.infer<typeof insertIntegrationSchema>;
+export type Integration = typeof integrations.$inferSelect;

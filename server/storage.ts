@@ -70,6 +70,14 @@ export interface IStorage {
   getCommentsByTask(taskId: number): Promise<Comment[]>;
   createComment(comment: InsertComment): Promise<Comment>;
   deleteComment(id: number): Promise<boolean>;
+  
+  // Integrations
+  getIntegration(id: number): Promise<Integration | undefined>;
+  getIntegrationByType(type: string): Promise<Integration | undefined>;
+  getAllIntegrations(): Promise<Integration[]>;
+  createIntegration(integration: InsertIntegration): Promise<Integration>;
+  updateIntegration(id: number, data: Partial<InsertIntegration>): Promise<Integration | undefined>;
+  deleteIntegration(id: number): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
