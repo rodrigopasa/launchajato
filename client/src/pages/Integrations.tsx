@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { getQueryFn, apiRequest, queryClient } from '@/lib/queryClient';
 import { useAuth } from '@/contexts/AuthContext';
@@ -70,6 +70,173 @@ export default function Integrations() {
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   const [integrationToDelete, setIntegrationToDelete] = useState<number | null>(null);
 
+  // Estados para WhatsApp Web
+  const [qrCode, setQrCode] = useState<string | null>(null);
+  const [whatsappWebStatus, setWhatsappWebStatus] = useState<{ ready: boolean; authenticated: boolean } | null>(null);
+  const [connectingWhatsAppWeb, setConnectingWhatsAppWeb] = useState(false);
+  const [disconnectingWhatsAppWeb, setDisconnectingWhatsAppWeb] = useState(false);
+  const [restartingWhatsAppWeb, setRestartingWhatsAppWeb] = useState(false);
+  
+  // Obter status do WhatsApp Web
+  const { data: whatsappWebData, isLoading: isLoadingWhatsappWeb, refetch: refetchWhatsappWeb } = useQuery({
+    queryKey: ['/api/whatsapp-web/status'],
+    queryFn: getQueryFn({ on401: 'returnNull' }),
+    enabled: user?.role === 'admin',
+    refetchInterval: whatsappWebStatus && !whatsappWebStatus.authenticated ? 5000 : false
+  });
+  
+  // Mutações para WhatsApp Web
+  const connectWhatsAppWebMutation = useMutation({
+    mutationFn: async () => {
+      setConnectingWhatsAppWeb(true);
+      const response = await fetch('/api/whatsapp-web/connect', {
+        method: 'POST'
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Erro ao conectar WhatsApp Web');
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: 'WhatsApp Web',
+        description: 'Conexão iniciada, aguarde o QR Code',
+      });
+      setTimeout(() => {
+        fetchQRCode();
+        refetchWhatsappWeb();
+      }, 1000);
+      setConnectingWhatsAppWeb(false);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Erro',
+        description: error.message,
+        variant: 'destructive',
+      });
+      setConnectingWhatsAppWeb(false);
+    }
+  });
+  
+  const disconnectWhatsAppWebMutation = useMutation({
+    mutationFn: async () => {
+      setDisconnectingWhatsAppWeb(true);
+      const response = await fetch('/api/whatsapp-web/disconnect', {
+        method: 'POST'
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Erro ao desconectar WhatsApp Web');
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: 'WhatsApp Web',
+        description: 'Desconectado com sucesso',
+      });
+      setQrCode(null);
+      refetchWhatsappWeb();
+      setDisconnectingWhatsAppWeb(false);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Erro',
+        description: error.message,
+        variant: 'destructive',
+      });
+      setDisconnectingWhatsAppWeb(false);
+    }
+  });
+  
+  const restartWhatsAppWebMutation = useMutation({
+    mutationFn: async () => {
+      setRestartingWhatsAppWeb(true);
+      const response = await fetch('/api/whatsapp-web/restart', {
+        method: 'POST'
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Erro ao reiniciar WhatsApp Web');
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: 'WhatsApp Web',
+        description: 'Reiniciado com sucesso, aguarde o QR Code',
+      });
+      setTimeout(() => {
+        fetchQRCode();
+        refetchWhatsappWeb();
+      }, 1000);
+      setRestartingWhatsAppWeb(false);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Erro',
+        description: error.message,
+        variant: 'destructive',
+      });
+      setRestartingWhatsAppWeb(false);
+    }
+  });
+  
+  // Buscar QR Code
+  const fetchQRCode = async () => {
+    try {
+      const response = await fetch('/api/whatsapp-web/qr-code');
+      if (!response.ok) {
+        if (response.status !== 404) { // Ignorar 404 (QR Code não disponível)
+          const error = await response.json();
+          throw new Error(error.message);
+        }
+        return;
+      }
+      
+      const data = await response.json();
+      if (data.qrCode) {
+        setQrCode(data.qrCode);
+      }
+    } catch (error) {
+      console.error('Erro ao buscar QR Code:', error);
+    }
+  };
+  
+  // Atualizar status do WhatsApp Web quando os dados mudam
+  useEffect(() => {
+    if (whatsappWebData) {
+      setWhatsappWebStatus(whatsappWebData.status);
+      
+      // Se não estiver autenticado e não tiver QR Code, tentar buscar
+      if (whatsappWebData.status && !whatsappWebData.status.authenticated && !qrCode) {
+        fetchQRCode();
+      }
+    }
+  }, [whatsappWebData]);
+  
+  // Função para conectar WhatsApp Web
+  const handleConnectWhatsAppWeb = () => {
+    connectWhatsAppWebMutation.mutate();
+  };
+  
+  // Função para desconectar WhatsApp Web
+  const handleDisconnectWhatsAppWeb = () => {
+    disconnectWhatsAppWebMutation.mutate();
+  };
+  
+  // Função para reiniciar WhatsApp Web
+  const handleRestartWhatsAppWeb = () => {
+    restartWhatsAppWebMutation.mutate();
+  };
+  
   // Obter integrações existentes
   const { data: integrations = [], isLoading: isLoadingIntegrations } = useQuery({
     queryKey: ['/api/integrations'],
@@ -249,7 +416,8 @@ export default function Integrations() {
 
       <Tabs defaultValue="whatsapp">
         <TabsList className="mb-4">
-          <TabsTrigger value="whatsapp">WhatsApp</TabsTrigger>
+          <TabsTrigger value="whatsapp">WhatsApp API</TabsTrigger>
+          <TabsTrigger value="whatsapp_web">WhatsApp Web (QR)</TabsTrigger>
           <TabsTrigger value="email" disabled>Email</TabsTrigger>
           <TabsTrigger value="sms" disabled>SMS</TabsTrigger>
         </TabsList>

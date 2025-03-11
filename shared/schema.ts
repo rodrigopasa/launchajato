@@ -8,7 +8,7 @@ export const projectStatusEnum = pgEnum('project_status', ['planning', 'in_progr
 export const taskPriorityEnum = pgEnum('task_priority', ['low', 'medium', 'high']);
 export const taskStatusEnum = pgEnum('task_status', ['todo', 'in_progress', 'review', 'completed']);
 export const professionEnum = pgEnum('profession', ['developer', 'designer', 'social_media', 'marketing', 'content_writer', 'project_manager', 'qa_tester', 'devops', 'product_owner', 'data_analyst', 'ui_ux', 'business_analyst', 'other']);
-export const integrationTypeEnum = pgEnum('integration_type', ['whatsapp', 'email', 'sms', 'other']);
+export const integrationTypeEnum = pgEnum('integration_type', ['whatsapp', 'whatsapp_web', 'email', 'sms', 'other']);
 
 // Users table
 export const users = pgTable("users", {

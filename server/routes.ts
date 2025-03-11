@@ -19,7 +19,9 @@ import {
   integrations
 } from "@shared/schema";
 import chatbotRoutes from "./chatbot/routes";
+import whatsappWebRoutes from "./chatbot/whatsapp-web-routes";
 import { setupNotificationScheduler } from "./chatbot/notifications";
+import { initWhatsAppWebClient } from "./chatbot/whatsapp-web";
 
 import MemoryStore from "memorystore";
 
@@ -1433,8 +1435,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Registrar rotas do chatbot
   app.use('/api/chatbot', chatbotRoutes);
   
+  // Registrar rotas do WhatsApp Web
+  app.use('/api/whatsapp-web', whatsappWebRoutes);
+  
   // Inicializar o sistema de notificações do chatbot
   setupNotificationScheduler();
+  
+  // Inicializar WhatsApp Web (se configurado e ativo)
+  try {
+    await initWhatsAppWebClient();
+    console.log("Sistema de WhatsApp Web inicializado");
+  } catch (error) {
+    console.error("Erro ao inicializar WhatsApp Web:", error);
+  }
   
   console.log("Sistema de chatbot WhatsApp inicializado");
 
