@@ -71,9 +71,21 @@ import {
   UserPlus,
 } from "lucide-react";
 
+// Schema para o formulário de adicionar membro
+const addMemberSchema = z.object({
+  userId: z.number({
+    required_error: "O ID do usuário é obrigatório",
+  }),
+  role: z.enum(["admin", "manager", "member"], {
+    required_error: "A função é obrigatória",
+  }),
+});
+
+type AddMemberFormValues = z.infer<typeof addMemberSchema>;
+
 export default function ProjectDetail() {
   const { id } = useParams();
-  const projectId = parseInt(id);
+  const projectId = parseInt(id || "0");
   const { toast } = useToast();
 
   const [isEditProjectDialogOpen, setIsEditProjectDialogOpen] = useState(false);
@@ -83,6 +95,14 @@ export default function ProjectDetail() {
   const [isUploadFileDialogOpen, setIsUploadFileDialogOpen] = useState(false);
   const [isAddMemberDialogOpen, setIsAddMemberDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("overview");
+  
+  // Form para adicionar membro
+  const form = useForm<AddMemberFormValues>({
+    resolver: zodResolver(addMemberSchema),
+    defaultValues: {
+      role: "member",
+    },
+  });
 
   // Fetch project details
   const { data: project, isLoading: projectLoading } = useQuery({
@@ -196,6 +216,35 @@ export default function ProjectDetail() {
     },
   });
 
+  // Fetch all users for add member form
+  const { data: allUsers, isLoading: usersLoading } = useQuery({
+    queryKey: ["/api/users"],
+    enabled: isAddMemberDialogOpen, // Only fetch when dialog is open
+  });
+
+  // Add project member mutation
+  const addMemberMutation = useMutation({
+    mutationFn: async (data: AddMemberFormValues) => {
+      const response = await apiRequest("POST", `/api/projects/${projectId}/members`, data);
+      return response.json();
+    },
+    onSuccess: () => {
+      setIsAddMemberDialogOpen(false);
+      queryClient.invalidateQueries({ queryKey: [`/api/projects/${projectId}/members`] });
+      toast({
+        title: "Membro adicionado",
+        description: "O membro foi adicionado ao projeto com sucesso",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Erro ao adicionar membro",
+        description: error.message || "Ocorreu um erro ao adicionar o membro ao projeto",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleUpdateProject = (data: ProjectFormValues) => {
     updateProjectMutation.mutate(data);
   };
@@ -222,6 +271,11 @@ export default function ProjectDetail() {
 
   const handleTaskStatusChange = (id: number, completed: boolean) => {
     updateTaskStatusMutation.mutate({ id, completed });
+  };
+  
+  // Handle add member form submission
+  const handleAddMember = (data: AddMemberFormValues) => {
+    addMemberMutation.mutate(data);
   };
 
   if (projectLoading) {
@@ -570,8 +624,8 @@ export default function ProjectDetail() {
           <Card>
             <div className="py-4 px-5 border-b border-gray-100 flex items-center justify-between">
               <h3 className="text-lg font-semibold text-gray-800">Membros da Equipe</h3>
-              <Button size="sm">
-                <Plus className="h-4 w-4 mr-2" />
+              <Button size="sm" onClick={() => setIsAddMemberDialogOpen(true)}>
+                <UserPlus className="h-4 w-4 mr-2" />
                 Adicionar Membro
               </Button>
             </div>
@@ -583,8 +637,8 @@ export default function ProjectDetail() {
               ) : !members || members.length === 0 ? (
                 <div className="text-center py-8">
                   <p className="text-gray-500 mb-4">Nenhum membro encontrado</p>
-                  <Button>
-                    <Plus className="h-4 w-4 mr-2" />
+                  <Button onClick={() => setIsAddMemberDialogOpen(true)}>
+                    <UserPlus className="h-4 w-4 mr-2" />
                     Adicionar Membro
                   </Button>
                 </div>
@@ -753,6 +807,89 @@ export default function ProjectDetail() {
             projectId={projectId}
             onSuccess={() => setIsUploadFileDialogOpen(false)}
           />
+        </DialogContent>
+      </Dialog>
+      
+      {/* Add Project Member Dialog */}
+      <Dialog open={isAddMemberDialogOpen} onOpenChange={setIsAddMemberDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Adicionar Membro ao Projeto</DialogTitle>
+          </DialogHeader>
+          {usersLoading ? (
+            <div className="flex justify-center py-8">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          ) : (
+            <Form {...form}>
+              <form onSubmit={(e) => {
+                e.preventDefault();
+                form.handleSubmit(handleAddMember)(e);
+              }} className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="userId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Selecione o usuário</FormLabel>
+                      <Select
+                        onValueChange={(value) => field.onChange(parseInt(value))}
+                        disabled={addMemberMutation.isPending}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione um usuário" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {allUsers && allUsers.map((user: any) => (
+                            <SelectItem key={user.id} value={user.id.toString()}>
+                              {user.name} ({user.email})
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="role"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Função no projeto</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                        disabled={addMemberMutation.isPending}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione a função" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="admin">Administrador</SelectItem>
+                          <SelectItem value="manager">Gerente</SelectItem>
+                          <SelectItem value="member">Membro</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <Button type="submit" className="w-full" disabled={addMemberMutation.isPending}>
+                  {addMemberMutation.isPending && (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  )}
+                  Adicionar Membro
+                </Button>
+              </form>
+            </Form>
+          )}
         </DialogContent>
       </Dialog>
     </div>
