@@ -86,6 +86,27 @@ const addMemberSchema = z.object({
 
 type AddMemberFormValues = z.infer<typeof addMemberSchema>;
 
+// Função auxiliar para obter o rótulo da profissão
+function getProfessionLabel(profession: string): string {
+  const professionLabels: Record<string, string> = {
+    developer: "Desenvolvedor",
+    designer: "Designer",
+    social_media: "Social Media",
+    marketing: "Marketing",
+    content_writer: "Redator de Conteúdo",
+    project_manager: "Gerente de Projeto",
+    qa_tester: "QA Tester",
+    devops: "DevOps",
+    product_owner: "Product Owner",
+    data_analyst: "Analista de Dados",
+    ui_ux: "UI/UX Designer",
+    business_analyst: "Analista de Negócios",
+    other: "Outro"
+  };
+  
+  return professionLabels[profession] || "Outro";
+}
+
 export default function ProjectDetail() {
   const { id } = useParams();
   const projectId = parseInt(id || "0");
@@ -672,6 +693,13 @@ export default function ProjectDetail() {
                           {member.role === "admin" ? "Administrador" : 
                            member.role === "manager" ? "Gerente" : "Membro"}
                         </span>
+                        
+                        {member.profession && (
+                          <span className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">
+                            {getProfessionLabel(member.profession)}
+                          </span>
+                        )}
+                        
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="icon">
