@@ -138,6 +138,14 @@ export default function Sidebar() {
               >
                 Comunicação
               </NavItem>
+              <NavItem
+                href="/settings"
+                icon={<Settings className="h-5 w-5" />}
+                active={location.startsWith("/settings")}
+                collapsed={collapsed}
+              >
+                Configurações
+              </NavItem>
             </nav>
           </div>
 

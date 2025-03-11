@@ -12,6 +12,7 @@ import Tasks from "@/pages/Tasks";
 import Team from "@/pages/Team";
 import Files from "@/pages/Files";
 import Communication from "@/pages/Communication";
+import Settings from "@/pages/Settings";
 import { AuthProvider } from "./contexts/AuthContext";
 import { SidebarProvider } from "./contexts/SidebarContext";
 
@@ -28,6 +29,7 @@ function Router() {
           <Route path="/team" component={Team} />
           <Route path="/files" component={Files} />
           <Route path="/communication" component={Communication} />
+          <Route path="/settings" component={Settings} />
           <Route component={NotFound} />
         </Switch>
       </MainLayout>
