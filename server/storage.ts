@@ -7,6 +7,8 @@ import {
   type File, type InsertFile, type Activity, type InsertActivity,
   type Comment, type InsertComment
 } from "@shared/schema";
+import { db } from "./db";
+import { eq, and, desc } from "drizzle-orm";
 
 export interface IStorage {
   // Users
@@ -411,4 +413,383 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+// Implementação do armazenamento com banco de dados PostgreSQL
+export class DatabaseStorage implements IStorage {
+  // User methods
+  async getUser(id: number): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user;
+  }
+
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user;
+  }
+  
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.email, email));
+    return user;
+  }
+  
+  async getAllUsers(): Promise<User[]> {
+    return db.select().from(users);
+  }
+
+  async createUser(insertUser: InsertUser): Promise<User> {
+    const [user] = await db.insert(users).values(insertUser).returning();
+    return user;
+  }
+  
+  async updateUser(id: number, data: Partial<InsertUser>): Promise<User | undefined> {
+    const [updatedUser] = await db
+      .update(users)
+      .set(data)
+      .where(eq(users.id, id))
+      .returning();
+    return updatedUser;
+  }
+
+  // Project methods
+  async getProject(id: number): Promise<Project | undefined> {
+    const [project] = await db.select().from(projects).where(eq(projects.id, id));
+    return project;
+  }
+  
+  async getAllProjects(): Promise<Project[]> {
+    return db.select().from(projects);
+  }
+  
+  async getProjectsByUser(userId: number): Promise<Project[]> {
+    // Obter projetos em que o usuário é membro
+    const memberProjects = await db
+      .select({ projectId: projectMembers.projectId })
+      .from(projectMembers)
+      .where(eq(projectMembers.userId, userId));
+    
+    const memberProjectIds = memberProjects.map(p => p.projectId);
+    
+    // Obter projetos criados pelo usuário
+    const userProjects = await db
+      .select()
+      .from(projects)
+      .where(eq(projects.createdBy, userId));
+    
+    // Combinar resultados, removendo duplicatas
+    if (memberProjectIds.length === 0) {
+      return userProjects;
+    }
+    
+    const memberProjectsList = await db
+      .select()
+      .from(projects)
+      .where(
+        projects.id.in(memberProjectIds)
+      );
+    
+    // Remover duplicatas (projetos que o usuário criou e também é membro)
+    const projectMap = new Map<number, Project>();
+    [...userProjects, ...memberProjectsList].forEach(project => {
+      projectMap.set(project.id, project);
+    });
+    
+    return Array.from(projectMap.values());
+  }
+
+  async createProject(insertProject: InsertProject): Promise<Project> {
+    const [project] = await db.insert(projects).values(insertProject).returning();
+    
+    // Adicionar criador como membro do projeto com função de administrador
+    await this.addProjectMember({
+      projectId: project.id,
+      userId: insertProject.createdBy,
+      role: "admin"
+    });
+    
+    return project;
+  }
+  
+  async updateProject(id: number, data: Partial<InsertProject>): Promise<Project | undefined> {
+    const [updatedProject] = await db
+      .update(projects)
+      .set(data)
+      .where(eq(projects.id, id))
+      .returning();
+    return updatedProject;
+  }
+  
+  async deleteProject(id: number): Promise<boolean> {
+    await db.delete(projects).where(eq(projects.id, id));
+    return true;
+  }
+
+  // Project Members methods
+  async getProjectMembers(projectId: number): Promise<ProjectMember[]> {
+    return db
+      .select()
+      .from(projectMembers)
+      .where(eq(projectMembers.projectId, projectId));
+  }
+  
+  async addProjectMember(insertMember: InsertProjectMember): Promise<ProjectMember> {
+    const [member] = await db
+      .insert(projectMembers)
+      .values(insertMember)
+      .returning();
+    return member;
+  }
+  
+  async removeProjectMember(projectId: number, userId: number): Promise<boolean> {
+    await db
+      .delete(projectMembers)
+      .where(
+        and(
+          eq(projectMembers.projectId, projectId),
+          eq(projectMembers.userId, userId)
+        )
+      );
+    return true;
+  }
+  
+  async updateProjectMemberRole(projectId: number, userId: number, role: string): Promise<boolean> {
+    await db
+      .update(projectMembers)
+      .set({ role: role as any })
+      .where(
+        and(
+          eq(projectMembers.projectId, projectId),
+          eq(projectMembers.userId, userId)
+        )
+      );
+    return true;
+  }
+
+  // Phase methods
+  async getPhases(projectId: number): Promise<Phase[]> {
+    return db
+      .select()
+      .from(phases)
+      .where(eq(phases.projectId, projectId))
+      .orderBy(phases.order);
+  }
+  
+  async createPhase(insertPhase: InsertPhase): Promise<Phase> {
+    const [phase] = await db
+      .insert(phases)
+      .values(insertPhase)
+      .returning();
+    return phase;
+  }
+  
+  async updatePhase(id: number, data: Partial<InsertPhase>): Promise<Phase | undefined> {
+    const [updatedPhase] = await db
+      .update(phases)
+      .set(data)
+      .where(eq(phases.id, id))
+      .returning();
+    return updatedPhase;
+  }
+  
+  async deletePhase(id: number): Promise<boolean> {
+    await db.delete(phases).where(eq(phases.id, id));
+    return true;
+  }
+
+  // Task methods
+  async getTask(id: number): Promise<Task | undefined> {
+    const [task] = await db
+      .select()
+      .from(tasks)
+      .where(eq(tasks.id, id));
+    return task;
+  }
+  
+  async getTasksByProject(projectId: number): Promise<Task[]> {
+    return db
+      .select()
+      .from(tasks)
+      .where(eq(tasks.projectId, projectId));
+  }
+  
+  async getTasksByPhase(phaseId: number): Promise<Task[]> {
+    return db
+      .select()
+      .from(tasks)
+      .where(eq(tasks.phaseId, phaseId));
+  }
+  
+  async getTasksByUser(userId: number): Promise<Task[]> {
+    return db
+      .select()
+      .from(tasks)
+      .where(eq(tasks.assignedTo, userId));
+  }
+  
+  async createTask(insertTask: InsertTask): Promise<Task> {
+    const [task] = await db
+      .insert(tasks)
+      .values(insertTask)
+      .returning();
+    return task;
+  }
+  
+  async updateTask(id: number, data: Partial<InsertTask>): Promise<Task | undefined> {
+    const [updatedTask] = await db
+      .update(tasks)
+      .set(data)
+      .where(eq(tasks.id, id))
+      .returning();
+    return updatedTask;
+  }
+  
+  async deleteTask(id: number): Promise<boolean> {
+    await db.delete(tasks).where(eq(tasks.id, id));
+    return true;
+  }
+
+  // Checklist Items methods
+  async getChecklistItems(taskId: number): Promise<ChecklistItem[]> {
+    return db
+      .select()
+      .from(checklistItems)
+      .where(eq(checklistItems.taskId, taskId))
+      .orderBy(checklistItems.order);
+  }
+  
+  async createChecklistItem(insertItem: InsertChecklistItem): Promise<ChecklistItem> {
+    const [item] = await db
+      .insert(checklistItems)
+      .values(insertItem)
+      .returning();
+    return item;
+  }
+  
+  async updateChecklistItem(id: number, data: Partial<InsertChecklistItem>): Promise<ChecklistItem | undefined> {
+    const [updatedItem] = await db
+      .update(checklistItems)
+      .set(data)
+      .where(eq(checklistItems.id, id))
+      .returning();
+    return updatedItem;
+  }
+  
+  async deleteChecklistItem(id: number): Promise<boolean> {
+    await db.delete(checklistItems).where(eq(checklistItems.id, id));
+    return true;
+  }
+
+  // Files methods
+  async getFile(id: number): Promise<File | undefined> {
+    const [file] = await db
+      .select()
+      .from(files)
+      .where(eq(files.id, id));
+    return file;
+  }
+  
+  async getFilesByProject(projectId: number): Promise<File[]> {
+    return db
+      .select()
+      .from(files)
+      .where(eq(files.projectId, projectId));
+  }
+  
+  async getFilesByTask(taskId: number): Promise<File[]> {
+    return db
+      .select()
+      .from(files)
+      .where(eq(files.taskId, taskId));
+  }
+  
+  async createFile(insertFile: InsertFile): Promise<File> {
+    const [file] = await db
+      .insert(files)
+      .values(insertFile)
+      .returning();
+    return file;
+  }
+  
+  async deleteFile(id: number): Promise<boolean> {
+    await db.delete(files).where(eq(files.id, id));
+    return true;
+  }
+
+  // Activities methods
+  async getActivitiesByProject(projectId: number, limit?: number): Promise<Activity[]> {
+    const query = db
+      .select()
+      .from(activities)
+      .where(eq(activities.projectId, projectId))
+      .orderBy(desc(activities.createdAt));
+    
+    if (limit) {
+      query.limit(limit);
+    }
+    
+    return query;
+  }
+  
+  async createActivity(insertActivity: InsertActivity): Promise<Activity> {
+    const [activity] = await db
+      .insert(activities)
+      .values(insertActivity)
+      .returning();
+    return activity;
+  }
+
+  // Comments methods
+  async getCommentsByProject(projectId: number): Promise<Comment[]> {
+    return db
+      .select()
+      .from(comments)
+      .where(eq(comments.projectId, projectId))
+      .orderBy(desc(comments.createdAt));
+  }
+  
+  async getCommentsByTask(taskId: number): Promise<Comment[]> {
+    return db
+      .select()
+      .from(comments)
+      .where(eq(comments.taskId, taskId))
+      .orderBy(desc(comments.createdAt));
+  }
+  
+  async createComment(insertComment: InsertComment): Promise<Comment> {
+    const [comment] = await db
+      .insert(comments)
+      .values(insertComment)
+      .returning();
+    return comment;
+  }
+  
+  async deleteComment(id: number): Promise<boolean> {
+    await db.delete(comments).where(eq(comments.id, id));
+    return true;
+  }
+}
+
+// Substituir o armazenamento em memória pelo armazenamento de banco de dados
+// export const storage = new MemStorage();
+export const storage = new DatabaseStorage();
+
+// Inicializar o usuário admin se não existir
+async function initializeAdmin() {
+  try {
+    const adminUser = await storage.getUserByUsername("admin");
+    if (!adminUser) {
+      await storage.createUser({
+        username: "admin",
+        password: "admin123",
+        name: "Administrador",
+        email: "admin@launchpro.com",
+        role: "admin",
+        avatar: ""
+      });
+      console.log("Usuário admin criado com sucesso");
+    }
+  } catch (error) {
+    console.error("Erro ao inicializar usuário admin:", error);
+  }
+}
+
+// Inicializar o admin na inicialização
+initializeAdmin();
