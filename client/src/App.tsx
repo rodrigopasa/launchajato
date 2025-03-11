@@ -18,6 +18,7 @@ import ChatbotSettings from "@/pages/ChatbotSettings";
 import Integrations from "@/pages/Integrations";
 import { AuthProvider } from "./contexts/AuthContext";
 import { SidebarProvider } from "./contexts/SidebarContext";
+import { SettingsProvider } from "./contexts/SettingsContext";
 
 function Router() {
   return (
@@ -47,8 +48,10 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <Router />
-        <Toaster />
+        <SettingsProvider>
+          <Router />
+          <Toaster />
+        </SettingsProvider>
       </AuthProvider>
     </QueryClientProvider>
   );
