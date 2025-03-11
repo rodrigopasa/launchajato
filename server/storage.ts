@@ -8,7 +8,7 @@ import {
   type Comment, type InsertComment
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, desc } from "drizzle-orm";
+import { eq, and, desc, inArray } from "drizzle-orm";
 
 export interface IStorage {
   // Users
@@ -479,11 +479,15 @@ export class DatabaseStorage implements IStorage {
       return userProjects;
     }
     
+    // Use o operador 'in' da forma correta com o drizzle-orm
     const memberProjectsList = await db
       .select()
       .from(projects)
       .where(
-        projects.id.in(memberProjectIds)
+        // Uso correto do operador 'in' no drizzle
+        memberProjectIds.length > 0 ? 
+          inArray(projects.id, memberProjectIds) : 
+          undefined
       );
     
     // Remover duplicatas (projetos que o usuário criou e também é membro)
