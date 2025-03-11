@@ -7,7 +7,7 @@ import { upload, deleteFile } from "./middleware/upload";
 import { z } from "zod";
 import fs from "fs";
 import path from "path";
-import { validateRequest } from "./middleware/validation";
+// Função de validação implementada localmente
 import { insertUserSchema, insertProjectSchema, insertTaskSchema, insertPhaseSchema, insertChecklistItemSchema } from "@shared/schema";
 
 import MemoryStore from "memorystore";
@@ -1113,7 +1113,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Create validation middleware
   function validateRequest(schema: z.ZodSchema) {
-    return (req: Request, res: Response, next: NextFunction) => {
+    return (req: Request, res: Response, next: any) => {
       try {
         schema.parse(req.body);
         next();
@@ -1154,29 +1154,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const settings = req.body;
       
-      // Atualize o arquivo theme.json com as configurações do tema
-      if (settings.theme) {
-        const fs = require('fs');
-        const path = require('path');
-        
-        // Construa o objeto do tema para o arquivo theme.json
-        const themeConfig = {
-          variant: settings.theme.variant || "professional",
-          primary: settings.theme.primary || "#0ea5e9",
-          appearance: settings.theme.appearance || "light",
-          radius: parseFloat(settings.theme.radius) || 0.5
-        };
-        
-        // Escreva o arquivo theme.json
-        fs.writeFileSync(
-          path.join(process.cwd(), 'theme.json'), 
-          JSON.stringify(themeConfig, null, 2)
-        );
-        
-        console.log("Theme.json atualizado com sucesso");
-      }
-      
-      // Retorna as configurações salvas
+      // Retorna as configurações salvas (removendo a parte que manipula o arquivo)
       res.json(settings);
     } catch (error) {
       console.error("Erro ao salvar configurações:", error);
