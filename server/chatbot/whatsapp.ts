@@ -21,11 +21,12 @@ const SESSION_TIMEOUT = 30 * 60 * 1000; // 30 minutos em milissegundos
 
 function cleanupSessions() {
   const now = new Date();
-  for (const [phoneNumber, session] of chatSessions.entries()) {
+  // Usando Array.from para evitar problemas de iteração
+  Array.from(chatSessions.entries()).forEach(([phoneNumber, session]) => {
     if (now.getTime() - session.lastActivity.getTime() > SESSION_TIMEOUT) {
       chatSessions.delete(phoneNumber);
     }
-  }
+  });
 }
 
 // Executar limpeza de sessão a cada 5 minutos
@@ -288,7 +289,7 @@ async function handleAuthenticatedCommands(session: ChatSession, message: string
       if (checklistItems && checklistItems.length > 0) {
         response += '*Checklist:*\n';
         checklistItems.forEach((item, index) => {
-          response += `${index + 1}. [${item.completed ? '✓' : ' '}] ${item.text}\n`;
+          response += `${index + 1}. [${item.isCompleted ? '✓' : ' '}] ${item.text}\n`;
         });
       }
       

@@ -14,6 +14,7 @@ import Files from "@/pages/Files";
 import Communication from "@/pages/Communication";
 import Settings from "@/pages/Settings";
 import Reports from "@/pages/Reports";
+import ChatbotSettings from "@/pages/ChatbotSettings";
 import { AuthProvider } from "./contexts/AuthContext";
 import { SidebarProvider } from "./contexts/SidebarContext";
 
@@ -32,6 +33,7 @@ function Router() {
           <Route path="/communication" component={Communication} />
           <Route path="/reports" component={Reports} />
           <Route path="/settings" component={Settings} />
+          <Route path="/chatbot" component={ChatbotSettings} />
           <Route component={NotFound} />
         </Switch>
       </MainLayout>

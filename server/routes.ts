@@ -9,6 +9,8 @@ import fs from "fs";
 import path from "path";
 import { validateRequest } from "./middleware/validation";
 import { insertUserSchema, insertProjectSchema, insertProjectMemberSchema, insertTaskSchema, insertPhaseSchema, insertChecklistItemSchema } from "@shared/schema";
+import chatbotRoutes from "./chatbot/routes";
+import { setupNotificationScheduler } from "./chatbot/notifications";
 
 import MemoryStore from "memorystore";
 
@@ -1260,6 +1262,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Erro ao enviar logo" });
     }
   });
+
+  // Registrar rotas do chatbot
+  app.use('/api/chatbot', chatbotRoutes);
+  
+  // Inicializar o sistema de notificações do chatbot
+  setupNotificationScheduler();
+  
+  console.log("Sistema de chatbot WhatsApp inicializado");
 
   const httpServer = createServer(app);
   return httpServer;
