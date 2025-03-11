@@ -318,7 +318,7 @@ export default function Reports() {
   
   // Buscar atividades
   const { data: activities, isLoading: activitiesLoading } = useQuery({
-    queryKey: ["/api/projects/activities"],
+    queryKey: ["/api/activities"],
   });
   
   // Filtrar dados por data

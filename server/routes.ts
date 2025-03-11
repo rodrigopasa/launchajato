@@ -1017,6 +1017,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Activities Routes
+  app.get("/api/activities", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      // Obter todos os projetos que o usuário é membro
+      const userProjects = await storage.getProjectsByUser(res.locals.user.id);
+      const projectIds = userProjects.map(project => project.id);
+      
+      // Obter atividades para todos esses projetos
+      let allActivities: any[] = [];
+      for (const projectId of projectIds) {
+        const projectActivities = await storage.getActivitiesByProject(projectId);
+        allActivities.push(...projectActivities);
+      }
+      
+      // Ordenar por data decrescente
+      allActivities.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      
+      // Limitar o número de resultados (opcional)
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : undefined;
+      if (limit) {
+        allActivities = allActivities.slice(0, limit);
+      }
+      
+      // Get user details for each activity
+      const activitiesWithUsers = await Promise.all(allActivities.map(async (activity) => {
+        const user = await storage.getUser(activity.userId);
+        if (!user) return activity;
+        
+        const { password: _, ...userWithoutPassword } = user;
+        return {
+          ...activity,
+          user: userWithoutPassword
+        };
+      }));
+      
+      return res.json(activitiesWithUsers);
+    } catch (error) {
+      return res.status(500).json({ message: "Erro ao buscar atividades", error });
+    }
+  });
+
   app.get("/api/projects/:projectId/activities", isProjectMember, async (req: Request, res: Response) => {
     const projectId = parseInt(req.params.projectId);
     const limit = req.query.limit ? parseInt(req.query.limit as string) : undefined;
