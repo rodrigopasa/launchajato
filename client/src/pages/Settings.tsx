@@ -174,7 +174,10 @@ export default function Settings() {
     });
     
     // Aplica a mudança em tempo real
-    document.documentElement.style.setProperty('--primary', color);
+    document.documentElement.style.setProperty('--theme-primary', color);
+    
+    // Salva a configuração local temporariamente
+    localStorage.setItem('temp-theme-primary', color);
   };
 
   // Manipular mudança de variante
@@ -183,6 +186,7 @@ export default function Settings() {
       ...themeSettings,
       variant,
     });
+    localStorage.setItem('temp-theme-variant', variant);
   };
 
   // Manipular mudança de aparência
@@ -191,6 +195,14 @@ export default function Settings() {
       ...themeSettings,
       appearance,
     });
+    localStorage.setItem('temp-theme-appearance', appearance);
+    
+    // Aplica imediatamente a mudança de aparência
+    if (appearance === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else if (appearance === 'light') {
+      document.documentElement.classList.remove('dark');
+    }
   };
 
   // Manipular mudança de arredondamento
@@ -199,6 +211,8 @@ export default function Settings() {
       ...themeSettings,
       radius,
     });
+    localStorage.setItem('temp-theme-radius', radius);
+    document.documentElement.style.setProperty('--theme-radius', radius);
   };
 
   // Manipular mudança de nome da organização

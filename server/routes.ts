@@ -1153,8 +1153,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/settings", isAuthenticated, async (req: Request, res: Response) => {
     try {
       const settings = req.body;
-      // Aqui seria implementada a lógica para salvar as configurações em um banco de dados
-      // Por enquanto, apenas retornamos as configurações recebidas
+      
+      // Atualize o arquivo theme.json com as configurações do tema
+      if (settings.theme) {
+        const fs = require('fs');
+        const path = require('path');
+        
+        // Construa o objeto do tema para o arquivo theme.json
+        const themeConfig = {
+          variant: settings.theme.variant || "professional",
+          primary: settings.theme.primary || "#0ea5e9",
+          appearance: settings.theme.appearance || "light",
+          radius: parseFloat(settings.theme.radius) || 0.5
+        };
+        
+        // Escreva o arquivo theme.json
+        fs.writeFileSync(
+          path.join(process.cwd(), 'theme.json'), 
+          JSON.stringify(themeConfig, null, 2)
+        );
+        
+        console.log("Theme.json atualizado com sucesso");
+      }
+      
+      // Retorna as configurações salvas
       res.json(settings);
     } catch (error) {
       console.error("Erro ao salvar configurações:", error);
