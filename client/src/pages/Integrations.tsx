@@ -6,6 +6,20 @@ import { z } from 'zod';
 import { useToast } from '@/hooks/use-toast';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
+import { 
+  CheckCircle, 
+  XCircle, 
+  CheckCircle2, 
+  Smartphone, 
+  Loader2, 
+  RefreshCw, 
+  AlertCircle,
+  ArrowRight,
+  MessageSquare, 
+  Phone, 
+  Settings, 
+  Trash2
+} from 'lucide-react';
 
 import { 
   Card, 
@@ -18,9 +32,11 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { Separator } from '@/components/ui/separator';
 import { 
   AlertDialog,
   AlertDialogAction,
@@ -41,16 +57,6 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import { Badge } from '@/components/ui/badge';
-import { 
-  ArrowRight, 
-  CheckCircle2, 
-  MessageSquare, 
-  Phone, 
-  Settings, 
-  Trash2, 
-  XCircle 
-} from 'lucide-react';
 
 // Schema para validação do formulário WhatsApp
 const whatsappConfigSchema = z.object({
@@ -245,7 +251,7 @@ export default function Integrations() {
   });
 
   // Formulário para configuração do WhatsApp
-  const whatsappIntegration = integrations.find((i: any) => i.type === 'whatsapp') || null;
+  const whatsappIntegration = Array.isArray(integrations) ? integrations.find((i: any) => i.type === 'whatsapp') : null;
   
   const form = useForm<WhatsAppConfigValues>({
     resolver: zodResolver(whatsappConfigSchema),
@@ -497,12 +503,12 @@ export default function Integrations() {
                       name="phoneNumberId"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Phone Number ID</FormLabel>
+                          <FormLabel>ID do Número de Telefone (WhatsApp Business)</FormLabel>
                           <FormControl>
                             <Input {...field} />
                           </FormControl>
                           <FormDescription>
-                            ID do número de telefone registrado no WhatsApp Business API
+                            ID do número de telefone no WhatsApp Business API
                           </FormDescription>
                           <FormMessage />
                         </FormItem>
@@ -516,10 +522,10 @@ export default function Integrations() {
                         <FormItem>
                           <FormLabel>Token de Acesso</FormLabel>
                           <FormControl>
-                            <Input type="password" {...field} />
+                            <Input {...field} type="password" />
                           </FormControl>
                           <FormDescription>
-                            Token de acesso para autenticação na API do WhatsApp
+                            Token de acesso à API do WhatsApp Business
                           </FormDescription>
                           <FormMessage />
                         </FormItem>
@@ -536,52 +542,39 @@ export default function Integrations() {
                             <Input {...field} />
                           </FormControl>
                           <FormDescription>
-                            Token usado para verificar webhooks recebidos do WhatsApp
+                            Token usado para verificar as chamadas do webhook
                           </FormDescription>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
-                  </div>
-                  
-                  <div className="flex justify-between mt-6">
-                    <div>
-                      {whatsappIntegration && (
-                        <Button
+                    
+                    <div className="flex justify-between pt-4">
+                      <div>
+                        {whatsappIntegration && (
+                          <Button 
+                            variant="outline"
+                            type="button"
+                            onClick={() => handleConfirmDelete(whatsappIntegration.id)}
+                            className="mr-2"
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" /> Excluir
+                          </Button>
+                        )}
+                      </div>
+                      <div className="flex gap-2">
+                        <Button 
+                          variant="outline" 
                           type="button"
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => handleConfirmDelete(whatsappIntegration.id)}
+                          onClick={testConnection}
+                          disabled={testingConnection || !whatsappIntegration?.enabled}
                         >
-                          <Trash2 className="mr-1 h-4 w-4" /> Excluir
+                          {testingConnection ? 'Testando...' : 'Testar Conexão'}
                         </Button>
-                      )}
-                    </div>
-                    <div className="flex space-x-2">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={testConnection}
-                        disabled={testingConnection || !whatsappIntegration?.enabled}
-                      >
-                        {testingConnection ? (
-                          <>Testando...</>
-                        ) : (
-                          <>
-                            <Phone className="mr-1 h-4 w-4" /> Testar Conexão
-                          </>
-                        )}
-                      </Button>
-                      
-                      <Button type="submit" disabled={saveMutation.isPending}>
-                        {saveMutation.isPending ? (
-                          <>Salvando...</>
-                        ) : (
-                          <>
-                            Salvar Configurações <ArrowRight className="ml-2 h-4 w-4" />
-                          </>
-                        )}
-                      </Button>
+                        <Button type="submit" disabled={saveMutation.isPending}>
+                          {saveMutation.isPending ? 'Salvando...' : 'Salvar'}
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 </form>
