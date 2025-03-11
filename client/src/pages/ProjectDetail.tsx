@@ -79,6 +79,9 @@ const addMemberSchema = z.object({
   role: z.enum(["admin", "manager", "member"], {
     required_error: "A função é obrigatória",
   }),
+  profession: z.enum(["developer", "designer", "social_media", "marketing", "content_writer", "project_manager", "qa_tester", "devops", "product_owner", "data_analyst", "ui_ux", "business_analyst", "other"], {
+    required_error: "A profissão é obrigatória",
+  }),
 });
 
 type AddMemberFormValues = z.infer<typeof addMemberSchema>;
@@ -101,6 +104,7 @@ export default function ProjectDetail() {
     resolver: zodResolver(addMemberSchema),
     defaultValues: {
       role: "member",
+      profession: "other",
     },
   });
 

@@ -7,6 +7,7 @@ export const roleEnum = pgEnum('role', ['admin', 'manager', 'member']);
 export const projectStatusEnum = pgEnum('project_status', ['planning', 'in_progress', 'testing', 'completed', 'on_hold']);
 export const taskPriorityEnum = pgEnum('task_priority', ['low', 'medium', 'high']);
 export const taskStatusEnum = pgEnum('task_status', ['todo', 'in_progress', 'review', 'completed']);
+export const professionEnum = pgEnum('profession', ['developer', 'designer', 'social_media', 'marketing', 'content_writer', 'project_manager', 'qa_tester', 'devops', 'product_owner', 'data_analyst', 'ui_ux', 'business_analyst', 'other']);
 
 // Users table
 export const users = pgTable("users", {
@@ -16,6 +17,7 @@ export const users = pgTable("users", {
   name: text("name").notNull(),
   email: text("email").notNull().unique(),
   role: roleEnum("role").notNull().default('member'),
+  profession: professionEnum("profession").default('other'),
   avatar: text("avatar"),
   createdAt: timestamp("created_at").defaultNow(),
 });
@@ -40,6 +42,7 @@ export const projectMembers = pgTable("project_members", {
   projectId: integer("project_id").notNull(),
   userId: integer("user_id").notNull(),
   role: roleEnum("role").notNull().default('member'),
+  profession: professionEnum("profession").default('other'),
 });
 
 // Phases table
@@ -116,6 +119,7 @@ export const insertUserSchema = createInsertSchema(users).pick({
   name: true,
   email: true,
   role: true,
+  profession: true,
   avatar: true,
 });
 
@@ -134,6 +138,7 @@ export const insertProjectMemberSchema = createInsertSchema(projectMembers).pick
   projectId: true,
   userId: true,
   role: true,
+  profession: true,
 });
 
 export const insertPhaseSchema = createInsertSchema(phases).pick({
