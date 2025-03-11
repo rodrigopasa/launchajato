@@ -54,25 +54,33 @@ export default function Settings() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
-  // Buscar configurações atuais
-  const { data: settings, isLoading } = useQuery({
-    queryKey: ["/api/settings"],
-    // Tratamento de erro silencioso para não quebrar se a API ainda não existir
-    onError: () => {
-      // Configurações padrão se a API não estiver disponível
-      return {
-        theme: {
-          primary: "#0ea5e9",
-          variant: "professional",
-          appearance: "light",
-          radius: "0.5",
-        },
-        organization: {
-          name: "Sistema de Gestão de Projetos",
-          logo: null,
-        },
-      };
+  // Configurações padrão
+  const defaultSettings = {
+    theme: {
+      primary: "#0ea5e9",
+      variant: "professional",
+      appearance: "light",
+      radius: "0.5",
     },
+    organization: {
+      name: "Sistema de Gestão de Projetos",
+      logo: null,
+    }
+  };
+
+  // Buscar configurações atuais
+  const { data: settings, isLoading } = useQuery<typeof defaultSettings>({
+    queryKey: ["/api/settings"],
+    queryFn: async () => {
+      try {
+        const response = await apiRequest("/api/settings");
+        const data = await response.json();
+        return data;
+      } catch (error) {
+        // Se a API falhar, retorne as configurações padrão
+        return defaultSettings;
+      }
+    }
   });
 
   // Estado local para as configurações de tema
@@ -86,7 +94,7 @@ export default function Settings() {
   // Estado local para as configurações da organização
   const [orgSettings, setOrgSettings] = useState({
     name: "Sistema de Gestão de Projetos",
-    // outros campos como logo, etc
+    logo: null as string | null
   });
 
   // Atualizar estados locais quando os dados são carregados
@@ -102,12 +110,13 @@ export default function Settings() {
   }, [settings]);
 
   // Mutation para salvar configurações
-  const saveSettingsMutation = useMutation({
-    mutationFn: async (data: any) => {
-      return apiRequest("/api/settings", {
+  const saveSettingsMutation = useMutation<any, Error, typeof defaultSettings>({
+    mutationFn: async (data) => {
+      const response = await apiRequest("/api/settings", {
         method: "PUT",
         body: JSON.stringify(data),
       });
+      return response.json();
     },
     onSuccess: () => {
       toast({
@@ -128,12 +137,13 @@ export default function Settings() {
   });
 
   // Mutation para fazer upload do logo
-  const uploadLogoMutation = useMutation({
+  const uploadLogoMutation = useMutation<any, Error, FormData>({
     mutationFn: async (formData: FormData) => {
-      return apiRequest("/api/settings/logo", {
+      const response = await apiRequest("/api/settings/logo", {
         method: "POST",
         body: formData,
       });
+      return response.json();
     },
     onSuccess: () => {
       toast({
