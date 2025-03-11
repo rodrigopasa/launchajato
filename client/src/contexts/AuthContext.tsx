@@ -39,7 +39,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     queryKey: ["/api/auth/me"],
     queryFn: async () => {
       try {
-        const response = await apiRequest("/api/auth/me", { method: "GET" });
+        const response = await fetch("/api/auth/me", {
+          method: "GET",
+          credentials: "include"
+        });
+        if (!response.ok) {
+          return null;
+        }
         const userData = await response.json();
         return userData as User;
       } catch (error) {
@@ -63,7 +69,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     { username: string; password: string }
   >({
     mutationFn: async ({ username, password }) => {
-      const response = await apiRequest("/api/auth/login", { method: "POST" }, { username, password });
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password }),
+        credentials: "include"
+      });
+      if (!response.ok) {
+        const error = await response.text();
+        throw new Error(error || "Erro no login");
+      }
       return response.json();
     },
     onSuccess: (data) => {
@@ -85,7 +100,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // Logout mutation
   const logoutMutation = useMutation<any, Error, void>({
     mutationFn: async () => {
-      const response = await apiRequest("POST", "/api/auth/logout");
+      const response = await fetch("/api/auth/logout", {
+        method: "POST",
+        credentials: "include"
+      });
+      if (!response.ok) {
+        const error = await response.text();
+        throw new Error(error || "Erro ao fazer logout");
+      }
       return response.json();
     },
     onSuccess: () => {
