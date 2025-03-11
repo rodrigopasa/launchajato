@@ -589,6 +589,166 @@ export default function Integrations() {
             </CardContent>
           </Card>
         </TabsContent>
+        
+        <TabsContent value="whatsapp_web">
+          <Card>
+            <CardHeader>
+              <div className="flex justify-between items-center">
+                <div>
+                  <CardTitle className="flex items-center">
+                    <Smartphone className="mr-2 h-5 w-5" />
+                    WhatsApp Web (via QR Code)
+                  </CardTitle>
+                  <CardDescription>
+                    Conecte o sistema usando um QR Code para enviar notificações via WhatsApp
+                  </CardDescription>
+                </div>
+                {whatsappWebStatus && (
+                  <Badge variant={whatsappWebStatus.authenticated ? "secondary" : "outline"}>
+                    {whatsappWebStatus.authenticated ? (
+                      <span className="flex items-center">
+                        <CheckCircle2 className="mr-1 h-3 w-3" /> Conectado
+                      </span>
+                    ) : (
+                      <span className="flex items-center">
+                        <XCircle className="mr-1 h-3 w-3" /> Desconectado
+                      </span>
+                    )}
+                  </Badge>
+                )}
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  Esta opção permite conectar o sistema diretamente ao WhatsApp Web usando um dispositivo do WhatsApp existente, sem necessidade de API oficial ou aprovação do WhatsApp Business.
+                </p>
+                
+                <div className="flex flex-col md:flex-row gap-6">
+                  <div className="md:w-1/2 space-y-4">
+                    <div className="rounded-lg border p-4">
+                      <h3 className="text-sm font-medium mb-2">Status da conexão</h3>
+                      {isLoadingWhatsappWeb ? (
+                        <div className="flex justify-center p-4">
+                          <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          <div className="flex justify-between text-sm">
+                            <span>Cliente iniciado:</span>
+                            <span className="font-medium">{whatsappWebStatus?.ready ? 'Sim' : 'Não'}</span>
+                          </div>
+                          <div className="flex justify-between text-sm">
+                            <span>Autenticado:</span>
+                            <span className="font-medium">{whatsappWebStatus?.authenticated ? 'Sim' : 'Não'}</span>
+                          </div>
+                          <Separator className="my-2" />
+                          <div className="flex flex-wrap gap-2 mt-4">
+                            {whatsappWebStatus?.authenticated ? (
+                              <>
+                                <Button 
+                                  variant="destructive"
+                                  size="sm"
+                                  onClick={handleDisconnectWhatsAppWeb}
+                                  disabled={disconnectingWhatsAppWeb}
+                                >
+                                  {disconnectingWhatsAppWeb && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                                  Desconectar
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={handleRestartWhatsAppWeb}
+                                  disabled={restartingWhatsAppWeb}
+                                >
+                                  {restartingWhatsAppWeb && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                                  Reiniciar
+                                </Button>
+                              </>
+                            ) : (
+                              <Button
+                                variant="default"
+                                size="sm"
+                                onClick={handleConnectWhatsAppWeb}
+                                disabled={connectingWhatsAppWeb}
+                              >
+                                {connectingWhatsAppWeb && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                                Conectar
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    
+                    <div className="rounded-lg border p-4">
+                      <h3 className="text-sm font-medium mb-2">Como usar</h3>
+                      <ol className="space-y-2 pl-5 text-sm list-decimal">
+                        <li>Clique no botão "Conectar" para iniciar a conexão</li>
+                        <li>Escaneie o QR Code com seu celular</li>
+                        <li>Abra o WhatsApp no seu celular</li>
+                        <li>Toque em Menu ou Configurações e selecione WhatsApp Web</li>
+                        <li>Aponte seu celular para esta tela para capturar o código</li>
+                        <li>A conexão será estabelecida em poucos segundos</li>
+                      </ol>
+                    </div>
+                    
+                    <Alert>
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertTitle>Atenção</AlertTitle>
+                      <AlertDescription>
+                        Mantenha o sistema em execução para garantir que as notificações sejam enviadas corretamente. A desconexão do WhatsApp Web interromperá o envio de mensagens.
+                      </AlertDescription>
+                    </Alert>
+                  </div>
+                  
+                  <div className="md:w-1/2 flex flex-col items-center justify-center">
+                    {qrCode ? (
+                      <div className="space-y-4 text-center">
+                        <div className="border-2 border-dashed border-primary p-4 inline-block bg-white">
+                          <img 
+                            src={`data:image/png;base64,${qrCode}`} 
+                            alt="QR Code para WhatsApp Web" 
+                            className="h-64 w-64"
+                          />
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          Escaneie o QR Code acima usando o WhatsApp do seu celular
+                        </p>
+                        <div className="flex justify-center">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={fetchQRCode}
+                          >
+                            <RefreshCw className="h-4 w-4 mr-2" />
+                            Atualizar QR Code
+                          </Button>
+                        </div>
+                      </div>
+                    ) : whatsappWebStatus?.authenticated ? (
+                      <div className="text-center">
+                        <CheckCircle className="h-16 w-16 text-primary mx-auto" />
+                        <h3 className="mt-4 text-lg font-medium">WhatsApp conectado</h3>
+                        <p className="mt-2 text-sm text-muted-foreground">
+                          Seu WhatsApp Web está conectado e pronto para enviar mensagens.
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="text-center">
+                        <Smartphone className="h-16 w-16 text-muted-foreground mx-auto" />
+                        <h3 className="mt-4 text-lg font-medium">Não conectado</h3>
+                        <p className="mt-2 text-sm text-muted-foreground">
+                          Clique no botão "Conectar" para exibir o QR Code.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
       
       <AlertDialog open={openDeleteDialog} onOpenChange={setOpenDeleteDialog}>
