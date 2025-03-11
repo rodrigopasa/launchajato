@@ -39,7 +39,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     queryKey: ["/api/auth/me"],
     queryFn: async () => {
       try {
-        const response = await apiRequest("/api/auth/me");
+        const response = await apiRequest("/api/auth/me", { method: "GET" });
         const userData = await response.json();
         return userData as User;
       } catch (error) {
@@ -63,10 +63,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     { username: string; password: string }
   >({
     mutationFn: async ({ username, password }) => {
-      const response = await apiRequest("/api/auth/login", {
-        method: "POST",
-        body: JSON.stringify({ username, password })
-      });
+      const response = await apiRequest("/api/auth/login", { method: "POST" }, { username, password });
       return response.json();
     },
     onSuccess: (data) => {
@@ -88,9 +85,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // Logout mutation
   const logoutMutation = useMutation<any, Error, void>({
     mutationFn: async () => {
-      const response = await apiRequest("/api/auth/logout", {
-        method: "POST"
-      });
+      const response = await apiRequest("POST", "/api/auth/logout");
       return response.json();
     },
     onSuccess: () => {
