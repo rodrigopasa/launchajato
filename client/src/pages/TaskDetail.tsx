@@ -185,7 +185,8 @@ export default function TaskDetail() {
   // Update task status mutation
   const updateTaskStatusMutation = useMutation({
     mutationFn: async (newStatus: string) => {
-      return apiRequest("PUT", `/api/tasks/${taskId}`, { ...task, status: newStatus });
+      // Enviando apenas o status, não todo o objeto task
+      return apiRequest("PUT", `/api/tasks/${taskId}`, { status: newStatus });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/tasks/${taskId}`] });
