@@ -411,9 +411,7 @@ export default function ProjectDetail() {
                         dueDate={task.dueDate || new Date().toISOString()}
                         completed={task.status === "completed"}
                         onStatusChange={handleTaskStatusChange}
-                        onViewDetails={() => {
-                          // View task details logic
-                        }}
+                        onViewDetails={() => window.location.href = `/tasks/${task.id}`}
                       />
                     ))}
                   </div>
@@ -507,14 +505,12 @@ export default function ProjectDetail() {
                       dueDate={task.dueDate || new Date().toISOString()}
                       completed={task.status === "completed"}
                       onStatusChange={handleTaskStatusChange}
-                      onViewDetails={() => {
-                        // View task details logic
-                      }}
+                      onViewDetails={() => window.location.href = `/tasks/${task.id}`}
                       onEdit={() => {
-                        // Edit task logic
+                        // Implementaremos isso depois
                       }}
                       onDelete={() => {
-                        // Delete task logic
+                        // Implementaremos isso depois
                       }}
                     />
                   ))}
