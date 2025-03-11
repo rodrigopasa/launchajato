@@ -73,7 +73,7 @@ export default function Settings() {
     queryKey: ["/api/settings"],
     queryFn: async () => {
       try {
-        const response = await apiRequest("/api/settings");
+        const response = await apiRequest("GET", "/api/settings");
         const data = await response.json();
         return data;
       } catch (error) {
@@ -112,10 +112,18 @@ export default function Settings() {
   // Mutation para salvar configurações
   const saveSettingsMutation = useMutation<any, Error, typeof defaultSettings>({
     mutationFn: async (data) => {
-      const response = await apiRequest("/api/settings", {
+      const response = await fetch("/api/settings", {
         method: "PUT",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
+        credentials: "include"
       });
+      
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(`${response.status}: ${text || response.statusText}`);
+      }
+      
       return response.json();
     },
     onSuccess: () => {
@@ -139,10 +147,16 @@ export default function Settings() {
   // Mutation para fazer upload do logo
   const uploadLogoMutation = useMutation<any, Error, FormData>({
     mutationFn: async (formData: FormData) => {
-      const response = await apiRequest("/api/settings/logo", {
+      const response = await fetch("/api/settings/logo", {
         method: "POST",
         body: formData,
       });
+      
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(`${response.status}: ${text || response.statusText}`);
+      }
+      
       return response.json();
     },
     onSuccess: () => {
