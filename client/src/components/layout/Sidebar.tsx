@@ -15,6 +15,7 @@ import {
   ChevronLeft,
   Loader2,
   BarChart,
+  MessagesSquare,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
@@ -172,6 +173,14 @@ export default function Sidebar() {
                 collapsed={collapsed}
               >
                 Configurações
+              </NavItem>
+              <NavItem
+                href="/chatbot"
+                icon={<MessagesSquare className="h-5 w-5" />}
+                active={location.startsWith("/chatbot")}
+                collapsed={collapsed}
+              >
+                WhatsApp ChatBot
               </NavItem>
             </nav>
           </div>

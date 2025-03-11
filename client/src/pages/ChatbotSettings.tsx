@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
@@ -41,8 +41,20 @@ export default function ChatbotSettings() {
   const { toast } = useToast();
   const [testMessageSent, setTestMessageSent] = useState(false);
 
+  // Interface para as configurações do chatbot
+  interface ChatbotSettings {
+    phoneNumber: string;
+    enabled: boolean;
+    preferences: {
+      projectUpdates: boolean;
+      taskUpdates: boolean;
+      dailySummary: boolean;
+      activeHours: boolean;
+    };
+  }
+
   // Buscar configurações atuais do chatbot do usuário
-  const { data: settings, isLoading: settingsLoading } = useQuery({
+  const { data: settings, isLoading: settingsLoading } = useQuery<ChatbotSettings>({
     queryKey: ['/api/chatbot/settings'],
   });
 
@@ -60,7 +72,7 @@ export default function ChatbotSettings() {
   });
 
   // Preencher o formulário quando os dados são carregados
-  useState(() => {
+  useEffect(() => {
     if (settings) {
       form.reset({
         phoneNumber: settings.phoneNumber || '',
@@ -71,7 +83,7 @@ export default function ChatbotSettings() {
         activeHours: settings.preferences?.activeHours ?? false,
       });
     }
-  });
+  }, [settings, form]);
 
   // Mutação para salvar as configurações
   const saveSettingsMutation = useMutation({
