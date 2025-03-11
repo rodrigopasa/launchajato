@@ -375,9 +375,21 @@ export default function TaskDetail() {
                       
                       <div>
                         <h3 className="text-sm font-medium text-gray-500 mb-1">Status</h3>
-                        <Badge className={getStatusColor(task.status)}>
-                          {getStatusText(task.status)}
-                        </Badge>
+                        <div className="flex items-center">
+                          <Badge className={`px-3 py-1 ${getStatusColor(task.status)}`}>
+                            {getStatusText(task.status)}
+                          </Badge>
+                          
+                          {/* Indicador visual do status */}
+                          <div className="flex items-center ml-3">
+                            <div className={`h-2 w-2 rounded-full mr-1 ${
+                              task.status === "todo" ? "bg-gray-400" : "bg-green-500"
+                            }`}></div>
+                            <span className="text-xs text-gray-600">
+                              {task.status !== "todo" ? "Iniciada" : "Não iniciada"}
+                            </span>
+                          </div>
+                        </div>
                       </div>
                       
                       <div>
@@ -541,54 +553,99 @@ export default function TaskDetail() {
             </CardContent>
           </Card>
           
-          {/* Mudar Status */}
+          {/* Fluxo de Trabalho da Tarefa */}
           <Card className="mt-4">
             <CardHeader>
-              <CardTitle className="text-lg">Status</CardTitle>
-              <CardDescription>Altere o status da tarefa</CardDescription>
+              <CardTitle className="text-lg">Fluxo de Trabalho</CardTitle>
+              <CardDescription>Gerencie o progresso da tarefa</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-2">
-                <Button
-                  variant={task.status === "todo" ? "default" : "outline"}
-                  className="w-full justify-start mb-2"
-                  onClick={() => handleStatusChange("todo")}
-                  disabled={task.status === "todo" || updateTaskStatusMutation.isPending}
-                >
-                  <Clock className="h-4 w-4 mr-2" />
-                  Não Iniciada
-                </Button>
-                
-                <Button
-                  variant={task.status === "in_progress" ? "default" : "outline"}
-                  className="w-full justify-start mb-2"
-                  onClick={() => handleStatusChange("in_progress")}
-                  disabled={task.status === "in_progress" || updateTaskStatusMutation.isPending}
-                >
-                  <ArrowRight className="h-4 w-4 mr-2" />
-                  Em Andamento
-                </Button>
-                
-                <Button
-                  variant={task.status === "review" ? "default" : "outline"}
-                  className="w-full justify-start mb-2"
-                  onClick={() => handleStatusChange("review")}
-                  disabled={task.status === "review" || updateTaskStatusMutation.isPending}
-                >
-                  <ListChecks className="h-4 w-4 mr-2" />
-                  Em Revisão
-                </Button>
-                
-                <Button
-                  variant={task.status === "completed" ? "default" : "outline"}
-                  className="w-full justify-start"
-                  onClick={() => handleStatusChange("completed")}
-                  disabled={task.status === "completed" || updateTaskStatusMutation.isPending}
-                >
-                  <CheckCircle className="h-4 w-4 mr-2" />
-                  Concluída
-                </Button>
+              <div className="mb-6">
+                <div className="relative">
+                  <div className="flex justify-between mb-1">
+                    <span className="text-xs font-medium">Progresso</span>
+                    <span className="text-xs font-medium">
+                      {task.status === "todo" ? "0%" : 
+                      task.status === "in_progress" ? "33%" :
+                      task.status === "review" ? "66%" : "100%"}
+                    </span>
+                  </div>
+                  <Progress 
+                    value={
+                      task.status === "todo" ? 0 : 
+                      task.status === "in_progress" ? 33 :
+                      task.status === "review" ? 66 : 100
+                    }
+                    className="h-2"
+                  />
+                  
+                  <div className="flex justify-between mt-2">
+                    <div className="text-xs text-gray-500">Início</div>
+                    <div className="text-xs text-gray-500">Conclusão</div>
+                  </div>
+                </div>
               </div>
+              
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <Button
+                    variant={task.status === "todo" ? "default" : "outline"}
+                    className="justify-center py-6"
+                    onClick={() => handleStatusChange("todo")}
+                    disabled={task.status === "todo" || updateTaskStatusMutation.isPending}
+                  >
+                    <div className="flex flex-col items-center">
+                      <Clock className="h-6 w-6 mb-2" />
+                      <span>Não Iniciada</span>
+                    </div>
+                  </Button>
+                  
+                  <Button
+                    variant={task.status === "in_progress" ? "default" : "outline"}
+                    className="justify-center py-6"
+                    onClick={() => handleStatusChange("in_progress")}
+                    disabled={task.status === "in_progress" || updateTaskStatusMutation.isPending}
+                  >
+                    <div className="flex flex-col items-center">
+                      <ArrowRight className="h-6 w-6 mb-2" />
+                      <span>Em Andamento</span>
+                    </div>
+                  </Button>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-3">
+                  <Button
+                    variant={task.status === "review" ? "default" : "outline"}
+                    className="justify-center py-6"
+                    onClick={() => handleStatusChange("review")}
+                    disabled={task.status === "review" || updateTaskStatusMutation.isPending}
+                  >
+                    <div className="flex flex-col items-center">
+                      <ListChecks className="h-6 w-6 mb-2" />
+                      <span>Em Revisão</span>
+                    </div>
+                  </Button>
+                  
+                  <Button
+                    variant={task.status === "completed" ? "default" : "outline"}
+                    className="justify-center py-6"
+                    onClick={() => handleStatusChange("completed")}
+                    disabled={task.status === "completed" || updateTaskStatusMutation.isPending}
+                  >
+                    <div className="flex flex-col items-center">
+                      <CheckCircle className="h-6 w-6 mb-2" />
+                      <span>Concluída</span>
+                    </div>
+                  </Button>
+                </div>
+              </div>
+              
+              {updateTaskStatusMutation.isPending && (
+                <div className="flex justify-center items-center mt-4">
+                  <Loader2 className="animate-spin h-5 w-5 mr-2" />
+                  <span className="text-sm">Atualizando status...</span>
+                </div>
+              )}
             </CardContent>
           </Card>
           
