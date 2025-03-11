@@ -141,10 +141,7 @@ export default function TaskDetail() {
   // Update task mutation
   const updateTaskMutation = useMutation({
     mutationFn: async (data: TaskFormValues) => {
-      return apiRequest(`/api/tasks/${taskId}`, {
-        method: "PUT",
-        body: JSON.stringify(data),
-      });
+      return apiRequest("PUT", `/api/tasks/${taskId}`, data);
     },
     onSuccess: () => {
       setIsEditDialogOpen(false);
@@ -167,9 +164,7 @@ export default function TaskDetail() {
   // Delete task mutation
   const deleteTaskMutation = useMutation({
     mutationFn: async () => {
-      return apiRequest(`/api/tasks/${taskId}`, {
-        method: "DELETE",
-      });
+      return apiRequest("DELETE", `/api/tasks/${taskId}`);
     },
     onSuccess: () => {
       toast({
@@ -190,10 +185,7 @@ export default function TaskDetail() {
   // Update task status mutation
   const updateTaskStatusMutation = useMutation({
     mutationFn: async (newStatus: string) => {
-      return apiRequest(`/api/tasks/${taskId}`, {
-        method: "PUT",
-        body: JSON.stringify({ ...task, status: newStatus }),
-      });
+      return apiRequest("PUT", `/api/tasks/${taskId}`, { ...task, status: newStatus });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/tasks/${taskId}`] });
@@ -215,14 +207,11 @@ export default function TaskDetail() {
   // Add checklist item mutation
   const addChecklistItemMutation = useMutation({
     mutationFn: async (text: string) => {
-      return apiRequest(`/api/tasks/${taskId}/checklist`, {
-        method: "POST",
-        body: JSON.stringify({ 
-          text,
-          taskId,
-          order: checklistItems.length,
-          isCompleted: false
-        }),
+      return apiRequest("POST", `/api/tasks/${taskId}/checklist`, { 
+        text,
+        taskId,
+        order: checklistItems.length,
+        isCompleted: false
       });
     },
     onSuccess: () => {
@@ -245,10 +234,7 @@ export default function TaskDetail() {
   // Toggle checklist item completion mutation
   const toggleChecklistItemMutation = useMutation({
     mutationFn: async ({ id, isCompleted }: { id: number; isCompleted: boolean }) => {
-      return apiRequest(`/api/checklist/${id}`, {
-        method: "PUT",
-        body: JSON.stringify({ isCompleted }),
-      });
+      return apiRequest("PUT", `/api/checklist/${id}`, { isCompleted });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/tasks/${taskId}/checklist`] });
@@ -265,13 +251,10 @@ export default function TaskDetail() {
   // Add comment mutation
   const addCommentMutation = useMutation({
     mutationFn: async (content: string) => {
-      return apiRequest(`/api/projects/${task.projectId}/comments`, {
-        method: "POST",
-        body: JSON.stringify({ 
-          content,
-          projectId: task.projectId,
-          taskId
-        }),
+      return apiRequest("POST", `/api/projects/${task.projectId}/comments`, { 
+        content,
+        projectId: task.projectId,
+        taskId
       });
     },
     onSuccess: () => {
