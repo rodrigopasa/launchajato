@@ -27,7 +27,9 @@ export const projects = pgTable("projects", {
   description: text("description"),
   status: projectStatusEnum("status").notNull().default('planning'),
   progress: integer("progress").notNull().default(0),
+  startDate: timestamp("start_date"),
   deadline: timestamp("deadline"),
+  budget: integer("budget"),
   createdAt: timestamp("created_at").defaultNow(),
   createdBy: integer("created_by").notNull(),
 });
@@ -122,7 +124,9 @@ export const insertProjectSchema = createInsertSchema(projects).pick({
   description: true,
   status: true,
   progress: true,
+  startDate: true,
   deadline: true,
+  budget: true,
   createdBy: true,
 });
 
