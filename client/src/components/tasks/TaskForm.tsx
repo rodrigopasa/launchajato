@@ -40,7 +40,7 @@ const formSchema = z.object({
   description: z.string().max(500).optional(),
   priority: z.enum(["high", "medium", "low"]),
   status: z.enum(["todo", "in_progress", "review", "completed"]),
-  projectId: z.number(),
+  projectId: z.number().min(1, { message: "Selecione um projeto" }),
   phaseId: z.number().optional().nullable(),
   assignedTo: z.number().optional().nullable(),
   dueDate: z.date().optional(),
@@ -124,6 +124,37 @@ export function TaskForm({ defaultValues, onSubmit, projectId, isLoading = false
             </FormItem>
           )}
         />
+
+        {projects && projects.length > 0 && (
+          <FormField
+            control={form.control}
+            name="projectId"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Projeto</FormLabel>
+                <Select
+                  onValueChange={(value) => field.onChange(parseInt(value))}
+                  value={field.value ? field.value.toString() : ""}
+                  disabled={isLoading || !!projectId}
+                >
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione um projeto" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {projects.map((project: any) => (
+                      <SelectItem key={project.id} value={project.id.toString()}>
+                        {project.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormField
