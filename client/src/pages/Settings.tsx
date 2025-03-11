@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -21,7 +21,7 @@ const COLOR_OPTIONS = [
   { value: "#f59e0b", label: "Laranja", class: "bg-orange-500" },
   { value: "#ec4899", label: "Rosa", class: "bg-pink-500" },
   { value: "#64748b", label: "Cinza", class: "bg-slate-500" },
-  { value: "#64748b", label: "Cinza Azulado", class: "bg-slate-500" },
+  { value: "#334155", label: "Cinza Escuro", class: "bg-slate-700" },
 ];
 
 // Opções de variantes
@@ -90,7 +90,7 @@ export default function Settings() {
   });
 
   // Atualizar estados locais quando os dados são carregados
-  useState(() => {
+  useEffect(() => {
     if (settings) {
       if (settings.theme) {
         setThemeSettings(settings.theme);
@@ -99,7 +99,7 @@ export default function Settings() {
         setOrgSettings(settings.organization);
       }
     }
-  });
+  }, [settings]);
 
   // Mutation para salvar configurações
   const saveSettingsMutation = useMutation({
