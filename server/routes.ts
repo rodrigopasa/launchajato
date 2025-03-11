@@ -8,7 +8,7 @@ import { z } from "zod";
 import fs from "fs";
 import path from "path";
 import { validateRequest } from "./middleware/validation";
-import { insertUserSchema, insertProjectSchema, insertTaskSchema, insertPhaseSchema, insertChecklistItemSchema } from "@shared/schema";
+import { insertUserSchema, insertProjectSchema, insertProjectMemberSchema, insertTaskSchema, insertPhaseSchema, insertChecklistItemSchema } from "@shared/schema";
 
 import MemoryStore from "memorystore";
 
@@ -264,43 +264,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.post("/api/projects/:projectId/members", isProjectMember, hasProjectRole(['admin', 'manager']), async (req: Request, res: Response) => {
-    const projectId = parseInt(req.params.projectId);
-    const { userId, role } = req.body;
-    
-    if (!userId || !role) {
-      return res.status(400).json({ message: "userId e role são obrigatórios" });
+    try {
+      const projectId = parseInt(req.params.projectId);
+      
+      // Validar entrada usando o schema Zod
+      const validatedData = insertProjectMemberSchema.parse({
+        ...req.body,
+        projectId
+      });
+      
+      // Check if user exists
+      const user = await storage.getUser(validatedData.userId);
+      if (!user) {
+        return res.status(404).json({ message: "Usuário não encontrado" });
+      }
+      
+      // Check if user is already a member
+      const members = await storage.getProjectMembers(projectId);
+      const existingMember = members.find(m => m.userId === validatedData.userId);
+      
+      if (existingMember) {
+        return res.status(400).json({ message: "Usuário já é membro deste projeto" });
+      }
+      
+      // Verificar se o papel é válido (embora o schema já deva fazer isso)
+      if (!['admin', 'manager', 'member'].includes(validatedData.role)) {
+        return res.status(400).json({ 
+          message: "Papel inválido. Os papéis permitidos são 'admin', 'manager' ou 'member'" 
+        });
+      }
+      
+      const member = await storage.addProjectMember(validatedData);
+      
+      // Create activity
+      await storage.createActivity({
+        userId: res.locals.user.id,
+        projectId,
+        action: "adicionou",
+        subject: "um novo membro",
+        details: `${user.name} como ${validatedData.role}`
+      });
+      
+      res.status(201).json(member);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          message: "Dados inválidos para adição de membro", 
+          errors: error.errors 
+        });
+      }
+      console.error("Erro ao adicionar membro ao projeto:", error);
+      res.status(500).json({ message: "Erro ao adicionar membro ao projeto" });
     }
-    
-    // Check if user exists
-    const user = await storage.getUser(userId);
-    if (!user) {
-      return res.status(404).json({ message: "Usuário não encontrado" });
-    }
-    
-    // Check if user is already a member
-    const members = await storage.getProjectMembers(projectId);
-    const existingMember = members.find(m => m.userId === userId);
-    
-    if (existingMember) {
-      return res.status(400).json({ message: "Usuário já é membro deste projeto" });
-    }
-    
-    const member = await storage.addProjectMember({
-      projectId,
-      userId,
-      role
-    });
-    
-    // Create activity
-    await storage.createActivity({
-      userId: res.locals.user.id,
-      projectId,
-      action: "adicionou",
-      subject: "um novo membro",
-      details: `${user.name} como ${role}`
-    });
-    
-    res.status(201).json(member);
   });
 
   app.delete("/api/projects/:projectId/members/:userId", isProjectMember, hasProjectRole(['admin', 'manager']), async (req: Request, res: Response) => {
@@ -339,43 +354,74 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.put("/api/projects/:projectId/members/:userId/role", isProjectMember, hasProjectRole(['admin']), async (req: Request, res: Response) => {
-    const projectId = parseInt(req.params.projectId);
-    const userId = parseInt(req.params.userId);
-    const { role } = req.body;
-    
-    if (!role) {
-      return res.status(400).json({ message: "role é obrigatório" });
-    }
-    
-    // Prevent changing the last admin
-    if (role !== 'admin') {
-      const members = await storage.getProjectMembers(projectId);
-      const admins = members.filter(m => m.role === 'admin');
+    try {
+      const projectId = parseInt(req.params.projectId);
+      const userId = parseInt(req.params.userId);
+      const { role } = req.body;
       
-      if (admins.length === 1 && admins[0].userId === userId) {
-        return res.status(400).json({ message: "Não é possível rebaixar o último administrador do projeto" });
+      // Validar se o papel é fornecido
+      if (!role) {
+        return res.status(400).json({ message: "role é obrigatório" });
       }
+      
+      // Validar se o papel está entre os valores permitidos
+      if (!['admin', 'manager', 'member'].includes(role)) {
+        return res.status(400).json({ 
+          message: "Papel inválido. Os papéis permitidos são 'admin', 'manager' ou 'member'" 
+        });
+      }
+      
+      // Prevent changing the last admin
+      if (role !== 'admin') {
+        const members = await storage.getProjectMembers(projectId);
+        const admins = members.filter(m => m.role === 'admin');
+        
+        if (admins.length === 1 && admins[0].userId === userId) {
+          return res.status(400).json({ message: "Não é possível rebaixar o último administrador do projeto" });
+        }
+      }
+      
+      // Verificar se o usuário existe
+      const userToUpdate = await storage.getUser(userId);
+      if (!userToUpdate) {
+        return res.status(404).json({ message: "Usuário não encontrado" });
+      }
+      
+      // Verificar se o usuário é um membro do projeto
+      const members = await storage.getProjectMembers(projectId);
+      const existingMember = members.find(m => m.userId === userId);
+      
+      if (!existingMember) {
+        return res.status(404).json({ message: "Usuário não é membro deste projeto" });
+      }
+      
+      const updated = await storage.updateProjectMemberRole(projectId, userId, role);
+      
+      if (!updated) {
+        return res.status(404).json({ message: "Falha ao atualizar papel do membro" });
+      }
+      
+      // Create activity
+      await storage.createActivity({
+        userId: res.locals.user.id,
+        projectId,
+        action: "atualizou",
+        subject: "função de membro",
+        details: `${userToUpdate.name} para ${role}`
+      });
+      
+      res.json({ 
+        message: "Função atualizada com sucesso",
+        member: {
+          userId,
+          projectId,
+          role
+        }
+      });
+    } catch (error) {
+      console.error("Erro ao atualizar papel do membro:", error);
+      res.status(500).json({ message: "Erro ao atualizar papel do membro" });
     }
-    
-    const updated = await storage.updateProjectMemberRole(projectId, userId, role);
-    
-    if (!updated) {
-      return res.status(404).json({ message: "Membro não encontrado" });
-    }
-    
-    // Get user details for activity log
-    const user = await storage.getUser(userId);
-    
-    // Create activity
-    await storage.createActivity({
-      userId: res.locals.user.id,
-      projectId,
-      action: "atualizou",
-      subject: "função de membro",
-      details: user ? `${user.name} para ${role}` : `ID: ${userId} para ${role}`
-    });
-    
-    res.json({ message: "Função atualizada com sucesso" });
   });
 
   // Phases Routes
