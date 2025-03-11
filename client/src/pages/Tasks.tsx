@@ -293,6 +293,7 @@ export default function Tasks() {
                     onStatusChange={handleTaskStatusChange}
                     onEdit={() => handleEditTask(task)}
                     onDelete={() => handleDeleteTask(task.id)}
+                    onViewDetails={() => window.location.href = `/tasks/${task.id}`}
                   />
                 ))}
               </div>
