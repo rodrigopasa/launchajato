@@ -141,6 +141,10 @@ export default function Tasks() {
   const handleEditTask = (task: any) => {
     setTaskToEdit(task);
   };
+  
+  const handleViewTaskDetails = (taskId: number) => {
+    window.location.href = `/tasks/${taskId}`;
+  };
 
   const handleUpdateTask = (data: TaskFormValues) => {
     if (taskToEdit) {

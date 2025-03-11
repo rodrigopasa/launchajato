@@ -109,7 +109,7 @@ export default function TaskItem({
   return (
     <div 
       className="flex items-center p-3 hover:bg-gray-50 rounded-lg transition-colors duration-150 ease-in-out cursor-pointer"
-      onClick={onViewDetails}
+      onClick={() => onViewDetails && onViewDetails()}
     >
       <div className="flex-shrink-0 mr-3" onClick={(e) => e.stopPropagation()}>
         <Checkbox
