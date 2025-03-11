@@ -46,12 +46,12 @@ export default function Sidebar() {
   const { collapsed, mobile, mobileOpen, toggleCollapsed, setMobileOpen } = useSidebar();
 
   // Fetch recent projects
-  const { data: projects, isLoading } = useQuery({
+  const { data: projects, isLoading } = useQuery<any[]>({
     queryKey: ["/api/projects"],
     enabled: !!user,
   });
 
-  const recentProjects = projects?.slice(0, 3) || [];
+  const recentProjects = Array.isArray(projects) ? projects.slice(0, 3) : [];
 
   return (
     <>
@@ -162,7 +162,7 @@ export default function Sidebar() {
                 <>
                   {recentProjects.map((project: any) => (
                     <Link key={project.id} href={`/projects/${project.id}`}>
-                      <a className="flex items-center px-4 py-2 text-gray-300 hover:bg-gray-800 rounded-lg mb-1 text-sm">
+                      <div className="flex items-center px-4 py-2 text-gray-300 hover:bg-gray-800 rounded-lg mb-1 text-sm cursor-pointer">
                         <span
                           className={cn(
                             "w-2 h-2 rounded-full mr-2",
@@ -176,7 +176,7 @@ export default function Sidebar() {
                           )}
                         ></span>
                         <span className="truncate">{project.name}</span>
-                      </a>
+                      </div>
                     </Link>
                   ))}
                 </>

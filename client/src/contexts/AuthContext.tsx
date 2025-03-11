@@ -35,11 +35,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const { toast } = useToast();
 
   // Fetch current user
-  const { data, isLoading, error, refetch } = useQuery({
+  const { data, isLoading } = useQuery<User | null>({
     queryKey: ["/api/auth/me"],
+    queryFn: async () => {
+      try {
+        const response = await apiRequest("/api/auth/me");
+        const userData = await response.json();
+        return userData as User;
+      } catch (error) {
+        return null;
+      }
+    },
     retry: false,
-    // We suppress errors because a 401 is expected when not logged in
-    onError: () => {},
     enabled: true,
   });
 
@@ -50,8 +57,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [data]);
 
   // Login mutation
-  const loginMutation = useMutation({
-    mutationFn: async ({ username, password }: { username: string; password: string }) => {
+  const loginMutation = useMutation<
+    User, 
+    Error, 
+    { username: string; password: string }
+  >({
+    mutationFn: async ({ username, password }) => {
       const response = await apiRequest("/api/auth/login", {
         method: "POST",
         body: JSON.stringify({ username, password })
@@ -75,7 +86,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   });
 
   // Logout mutation
-  const logoutMutation = useMutation({
+  const logoutMutation = useMutation<any, Error, void>({
     mutationFn: async () => {
       const response = await apiRequest("/api/auth/logout", {
         method: "POST"
