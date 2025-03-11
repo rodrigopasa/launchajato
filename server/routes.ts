@@ -1139,6 +1139,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   app.put("/api/settings", isAuthenticated, async (req: Request, res: Response) => {
     try {
+      // Verificar se o usuário é administrador
+      if (res.locals.user.role !== 'admin') {
+        return res.status(403).json({ message: "Apenas administradores podem alterar as configurações" });
+      }
+      
       const settings = req.body;
       // Aqui seria implementada a lógica para salvar as configurações em um banco de dados
       // Por enquanto, apenas retornamos as configurações recebidas
@@ -1151,6 +1156,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   app.post("/api/settings/logo", isAuthenticated, upload.single('logo'), async (req: Request, res: Response) => {
     try {
+      // Verificar se o usuário é administrador
+      if (res.locals.user.role !== 'admin') {
+        return res.status(403).json({ message: "Apenas administradores podem alterar o logo" });
+      }
+      
       if (!req.file) {
         return res.status(400).json({ message: "Nenhum arquivo enviado" });
       }
