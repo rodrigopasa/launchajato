@@ -825,6 +825,52 @@ export class DatabaseStorage implements IStorage {
     await db.delete(comments).where(eq(comments.id, id));
     return true;
   }
+
+  // Integrations methods
+  async getIntegration(id: number): Promise<Integration | undefined> {
+    const [integration] = await db
+      .select()
+      .from(integrations)
+      .where(eq(integrations.id, id));
+    return integration;
+  }
+  
+  async getIntegrationByType(type: string): Promise<Integration | undefined> {
+    const [integration] = await db
+      .select()
+      .from(integrations)
+      .where(eq(integrations.type, type));
+    return integration;
+  }
+  
+  async getAllIntegrations(): Promise<Integration[]> {
+    return db.select().from(integrations);
+  }
+  
+  async createIntegration(insertIntegration: InsertIntegration): Promise<Integration> {
+    const [integration] = await db
+      .insert(integrations)
+      .values(insertIntegration)
+      .returning();
+    return integration;
+  }
+  
+  async updateIntegration(id: number, data: Partial<InsertIntegration>): Promise<Integration | undefined> {
+    const [updatedIntegration] = await db
+      .update(integrations)
+      .set({
+        ...data,
+        updatedAt: new Date()
+      })
+      .where(eq(integrations.id, id))
+      .returning();
+    return updatedIntegration;
+  }
+  
+  async deleteIntegration(id: number): Promise<boolean> {
+    await db.delete(integrations).where(eq(integrations.id, id));
+    return true;
+  }
 }
 
 // Substituir o armazenamento em memória pelo armazenamento de banco de dados

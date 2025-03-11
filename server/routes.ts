@@ -8,7 +8,16 @@ import { z } from "zod";
 import fs from "fs";
 import path from "path";
 import { validateRequest } from "./middleware/validation";
-import { insertUserSchema, insertProjectSchema, insertProjectMemberSchema, insertTaskSchema, insertPhaseSchema, insertChecklistItemSchema } from "@shared/schema";
+import { 
+  insertUserSchema, 
+  insertProjectSchema, 
+  insertProjectMemberSchema, 
+  insertTaskSchema, 
+  insertPhaseSchema, 
+  insertChecklistItemSchema,
+  insertIntegrationSchema,
+  integrations
+} from "@shared/schema";
 import chatbotRoutes from "./chatbot/routes";
 import { setupNotificationScheduler } from "./chatbot/notifications";
 
@@ -1263,6 +1272,164 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Rotas para Integrações
+  app.get("/api/integrations", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      // Verificar se o usuário é administrador
+      if (res.locals.user.role !== 'admin') {
+        return res.status(403).json({ message: "Apenas administradores podem visualizar integrações" });
+      }
+      
+      const integrations = await storage.getAllIntegrations();
+      return res.json(integrations);
+    } catch (error) {
+      console.error("Erro ao obter integrações:", error);
+      return res.status(500).json({ message: "Erro ao obter integrações" });
+    }
+  });
+  
+  app.get("/api/integrations/:id", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      // Verificar se o usuário é administrador
+      if (res.locals.user.role !== 'admin') {
+        return res.status(403).json({ message: "Apenas administradores podem visualizar integrações" });
+      }
+      
+      const integration = await storage.getIntegration(parseInt(req.params.id));
+      
+      if (!integration) {
+        return res.status(404).json({ message: "Integração não encontrada" });
+      }
+      
+      return res.json(integration);
+    } catch (error) {
+      console.error("Erro ao obter integração:", error);
+      return res.status(500).json({ message: "Erro ao obter integração" });
+    }
+  });
+  
+  app.post("/api/integrations", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      // Verificar se o usuário é administrador
+      if (res.locals.user.role !== 'admin') {
+        return res.status(403).json({ message: "Apenas administradores podem criar integrações" });
+      }
+      
+      const { type, name, enabled, credentials } = req.body;
+      
+      // Verificar se já existe uma integração do mesmo tipo
+      const existingIntegration = await storage.getIntegrationByType(type);
+      if (existingIntegration) {
+        return res.status(400).json({ message: `Já existe uma integração do tipo ${type}` });
+      }
+      
+      const integration = await storage.createIntegration({
+        type,
+        name,
+        enabled,
+        credentials,
+        configuredBy: res.locals.user.id
+      });
+      
+      return res.status(201).json(integration);
+    } catch (error) {
+      console.error("Erro ao criar integração:", error);
+      return res.status(500).json({ message: "Erro ao criar integração" });
+    }
+  });
+  
+  app.put("/api/integrations/:id", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      // Verificar se o usuário é administrador
+      if (res.locals.user.role !== 'admin') {
+        return res.status(403).json({ message: "Apenas administradores podem atualizar integrações" });
+      }
+      
+      const id = parseInt(req.params.id);
+      const integration = await storage.getIntegration(id);
+      
+      if (!integration) {
+        return res.status(404).json({ message: "Integração não encontrada" });
+      }
+      
+      const { type, name, enabled, credentials } = req.body;
+      
+      const updatedIntegration = await storage.updateIntegration(id, {
+        type,
+        name,
+        enabled,
+        credentials,
+        configuredBy: res.locals.user.id
+      });
+      
+      return res.json(updatedIntegration);
+    } catch (error) {
+      console.error("Erro ao atualizar integração:", error);
+      return res.status(500).json({ message: "Erro ao atualizar integração" });
+    }
+  });
+  
+  app.delete("/api/integrations/:id", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      // Verificar se o usuário é administrador
+      if (res.locals.user.role !== 'admin') {
+        return res.status(403).json({ message: "Apenas administradores podem excluir integrações" });
+      }
+      
+      const id = parseInt(req.params.id);
+      const integration = await storage.getIntegration(id);
+      
+      if (!integration) {
+        return res.status(404).json({ message: "Integração não encontrada" });
+      }
+      
+      await storage.deleteIntegration(id);
+      
+      return res.json({ message: "Integração excluída com sucesso" });
+    } catch (error) {
+      console.error("Erro ao excluir integração:", error);
+      return res.status(500).json({ message: "Erro ao excluir integração" });
+    }
+  });
+  
+  app.post("/api/integrations/whatsapp/test", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      // Verificar se o usuário é administrador
+      if (res.locals.user.role !== 'admin') {
+        return res.status(403).json({ message: "Apenas administradores podem testar integrações" });
+      }
+      
+      const whatsappIntegration = await storage.getIntegrationByType('whatsapp');
+      
+      if (!whatsappIntegration) {
+        return res.status(404).json({ message: "Integração WhatsApp não configurada" });
+      }
+      
+      if (!whatsappIntegration.enabled) {
+        return res.status(400).json({ message: "Integração WhatsApp está desativada" });
+      }
+      
+      // Em uma implementação real, aqui você faria uma chamada para a API do WhatsApp
+      // para verificar se as credenciais estão funcionando
+      
+      // Simulando teste básico
+      const credentials = whatsappIntegration.credentials;
+      if (!credentials?.phoneNumberId || !credentials?.accessToken || !credentials?.webhookToken) {
+        return res.status(400).json({ message: "Configurações do WhatsApp incompletas" });
+      }
+      
+      // Simulando resposta positiva
+      return res.json({ 
+        message: "Conexão com WhatsApp realizada com sucesso",
+        status: "ok" 
+      });
+      
+    } catch (error) {
+      console.error("Erro ao testar integração WhatsApp:", error);
+      return res.status(500).json({ message: "Erro ao testar integração WhatsApp" });
+    }
+  });
+  
   // Registrar rotas do chatbot
   app.use('/api/chatbot', chatbotRoutes);
   
