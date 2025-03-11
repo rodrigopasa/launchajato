@@ -46,7 +46,10 @@ export const isProjectMember = async (req: Request, res: Response, next: NextFun
     return res.status(401).json({ message: 'Não autenticado' });
   }
   
-  const projectId = parseInt(req.params.projectId);
+  // Verificar para parâmetros projectId ou id (para suportar diferentes rotas)
+  const projectIdParam = req.params.projectId || req.params.id;
+  const projectId = parseInt(projectIdParam);
+  
   if (isNaN(projectId)) {
     return res.status(400).json({ message: 'ID de projeto inválido' });
   }
