@@ -1125,6 +1125,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     };
   }
+  
+  // API para configurações
+  app.get("/api/settings", async (req: Request, res: Response) => {
+    try {
+      // Configurações padrão
+      const defaultSettings = {
+        theme: {
+          primary: "#0ea5e9",
+          variant: "professional",
+          appearance: "light",
+          radius: "0.5",
+        },
+        organization: {
+          name: "LaunchRocket",
+          logo: null,
+        }
+      };
+      
+      res.json(defaultSettings);
+    } catch (error) {
+      console.error("Erro ao buscar configurações:", error);
+      res.status(500).json({ message: "Erro ao buscar configurações" });
+    }
+  });
+  
+  app.put("/api/settings", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const settings = req.body;
+      // Aqui seria implementada a lógica para salvar as configurações em um banco de dados
+      // Por enquanto, apenas retornamos as configurações recebidas
+      res.json(settings);
+    } catch (error) {
+      console.error("Erro ao salvar configurações:", error);
+      res.status(500).json({ message: "Erro ao salvar configurações" });
+    }
+  });
+  
+  app.post("/api/settings/logo", isAuthenticated, upload.single('logo'), async (req: Request, res: Response) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: "Nenhum arquivo enviado" });
+      }
+      
+      // Retorna o caminho do arquivo
+      res.status(201).json({ 
+        logo: `/uploads/${req.file.filename}` 
+      });
+    } catch (error) {
+      console.error("Erro ao enviar logo:", error);
+      res.status(500).json({ message: "Erro ao enviar logo" });
+    }
+  });
 
   const httpServer = createServer(app);
   return httpServer;
