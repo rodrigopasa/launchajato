@@ -538,6 +538,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(task);
   });
 
+  app.get("/api/tasks", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userId = res.locals.user.id;
+      // Buscar tarefas do usuário
+      const userTasks = await storage.getTasksByUser(userId);
+      
+      // Buscar projetos do usuário
+      const userProjects = await storage.getProjectsByUser(userId);
+      
+      // Buscar todas as tarefas em todos os projetos do usuário
+      const projectTasks = [];
+      for (const project of userProjects) {
+        const tasks = await storage.getTasksByProject(project.id);
+        projectTasks.push(...tasks);
+      }
+      
+      // Combinar tarefas e remover duplicatas
+      const allTaskIds = new Set();
+      const allTasks = [];
+      
+      [...userTasks, ...projectTasks].forEach(task => {
+        if (!allTaskIds.has(task.id)) {
+          allTaskIds.add(task.id);
+          allTasks.push(task);
+        }
+      });
+      
+      res.json(allTasks);
+    } catch (error) {
+      console.error("Error fetching all tasks:", error);
+      res.status(500).json({ message: "Erro ao buscar todas as tarefas" });
+    }
+  });
+
   app.get("/api/tasks/user/me", isAuthenticated, async (req: Request, res: Response) => {
     const tasks = await storage.getTasksByUser(res.locals.user.id);
     res.json(tasks);

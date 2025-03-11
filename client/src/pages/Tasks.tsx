@@ -43,9 +43,9 @@ export default function Tasks() {
 
   const { toast } = useToast();
 
-  // Fetch user's tasks
+  // Fetch all tasks (assigned to user + all project tasks)
   const { data: tasks, isLoading: tasksLoading } = useQuery({
-    queryKey: ["/api/tasks/user/me"],
+    queryKey: ["/api/tasks"],
   });
 
   // Fetch projects for project selection
@@ -65,7 +65,7 @@ export default function Tasks() {
     },
     onSuccess: () => {
       setIsNewTaskDialogOpen(false);
-      queryClient.invalidateQueries({ queryKey: ["/api/tasks/user/me"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
       toast({
         title: "Tarefa criada",
         description: "A tarefa foi criada com sucesso",
@@ -88,7 +88,7 @@ export default function Tasks() {
     },
     onSuccess: () => {
       setTaskToEdit(null);
-      queryClient.invalidateQueries({ queryKey: ["/api/tasks/user/me"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
       toast({
         title: "Tarefa atualizada",
         description: "A tarefa foi atualizada com sucesso",
@@ -110,7 +110,7 @@ export default function Tasks() {
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/tasks/user/me"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
       toast({
         title: "Tarefa excluída",
         description: "A tarefa foi excluída com sucesso",

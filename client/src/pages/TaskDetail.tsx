@@ -1,13 +1,16 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useRoute, useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -25,7 +28,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Separator } from "@/components/ui/separator";
-import { Loader2, Plus, ArrowLeft, Paperclip, Calendar, Edit, Trash } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+import { Loader2, Plus, ArrowLeft, Calendar, Edit, Trash, CheckCircle, Clock, ArrowRight, ListChecks, Send, XCircle } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { TaskForm, type TaskFormValues } from "@/components/tasks/TaskForm";
@@ -96,7 +100,10 @@ export default function TaskDetail() {
   const [activeTab, setActiveTab] = useState("detalhes");
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
+  const [newChecklistItem, setNewChecklistItem] = useState("");
+  const [newComment, setNewComment] = useState("");
   
+  const commentInputRef = useRef<HTMLTextAreaElement>(null);
   const { toast } = useToast();
   
   // Fetch task details
@@ -120,6 +127,12 @@ export default function TaskDetail() {
   // Fetch comments for this task
   const { data: comments = [] } = useQuery({
     queryKey: [`/api/tasks/${taskId}/comments`],
+    enabled: taskId > 0,
+  });
+  
+  // Fetch checklist items for this task
+  const { data: checklistItems = [], isLoading: checklistLoading } = useQuery({
+    queryKey: [`/api/tasks/${taskId}/checklist`],
     enabled: taskId > 0,
   });
   
@@ -172,12 +185,136 @@ export default function TaskDetail() {
     },
   });
   
+  // Update task status mutation
+  const updateTaskStatusMutation = useMutation({
+    mutationFn: async (newStatus: string) => {
+      return apiRequest(`/api/tasks/${taskId}`, {
+        method: "PUT",
+        body: JSON.stringify({ ...task, status: newStatus }),
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/tasks/${taskId}`] });
+      queryClient.invalidateQueries({ queryKey: ["/api/tasks/user/me"] });
+      toast({
+        title: "Status atualizado",
+        description: "O status da tarefa foi atualizado com sucesso",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Erro ao atualizar status",
+        description: error.message || "Ocorreu um erro ao atualizar o status da tarefa",
+        variant: "destructive",
+      });
+    },
+  });
+  
+  // Add checklist item mutation
+  const addChecklistItemMutation = useMutation({
+    mutationFn: async (text: string) => {
+      return apiRequest(`/api/tasks/${taskId}/checklist`, {
+        method: "POST",
+        body: JSON.stringify({ 
+          text,
+          taskId,
+          order: checklistItems.length,
+          isCompleted: false
+        }),
+      });
+    },
+    onSuccess: () => {
+      setNewChecklistItem("");
+      queryClient.invalidateQueries({ queryKey: [`/api/tasks/${taskId}/checklist`] });
+      toast({
+        title: "Item adicionado",
+        description: "O item foi adicionado com sucesso",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Erro ao adicionar item",
+        description: error.message || "Ocorreu um erro ao adicionar o item",
+        variant: "destructive",
+      });
+    },
+  });
+  
+  // Toggle checklist item completion mutation
+  const toggleChecklistItemMutation = useMutation({
+    mutationFn: async ({ id, isCompleted }: { id: number; isCompleted: boolean }) => {
+      return apiRequest(`/api/checklist/${id}`, {
+        method: "PUT",
+        body: JSON.stringify({ isCompleted }),
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/tasks/${taskId}/checklist`] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Erro ao atualizar item",
+        description: error.message || "Ocorreu um erro ao atualizar o item",
+        variant: "destructive",
+      });
+    },
+  });
+  
+  // Add comment mutation
+  const addCommentMutation = useMutation({
+    mutationFn: async (content: string) => {
+      return apiRequest(`/api/projects/${task.projectId}/comments`, {
+        method: "POST",
+        body: JSON.stringify({ 
+          content,
+          projectId: task.projectId,
+          taskId
+        }),
+      });
+    },
+    onSuccess: () => {
+      setNewComment("");
+      queryClient.invalidateQueries({ queryKey: [`/api/tasks/${taskId}/comments`] });
+      toast({
+        title: "Comentário adicionado",
+        description: "O comentário foi adicionado com sucesso",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Erro ao adicionar comentário",
+        description: error.message || "Ocorreu um erro ao adicionar o comentário",
+        variant: "destructive",
+      });
+    },
+  });
+  
   const handleUpdateTask = (data: TaskFormValues) => {
     updateTaskMutation.mutate(data);
   };
   
   const handleDeleteTask = () => {
     deleteTaskMutation.mutate();
+  };
+  
+  const handleStatusChange = (newStatus: string) => {
+    updateTaskStatusMutation.mutate(newStatus);
+  };
+  
+  const handleAddChecklistItem = () => {
+    if (newChecklistItem.trim()) {
+      addChecklistItemMutation.mutate(newChecklistItem.trim());
+    }
+  };
+  
+  const handleToggleChecklistItem = (id: number, isCompleted: boolean) => {
+    toggleChecklistItemMutation.mutate({ id, isCompleted: !isCompleted });
+  };
+  
+  const handleAddComment = () => {
+    if (newComment.trim()) {
+      addCommentMutation.mutate(newComment.trim());
+    }
   };
   
   if (taskLoading) {
@@ -312,10 +449,6 @@ export default function TaskDetail() {
                   {comments.length === 0 ? (
                     <div className="text-center py-8">
                       <p className="text-gray-500 mb-2">Nenhum comentário encontrado</p>
-                      <Button size="sm">
-                        <Plus className="h-4 w-4 mr-2" />
-                        Adicionar Comentário
-                      </Button>
                     </div>
                   ) : (
                     <div className="space-y-4">
@@ -338,6 +471,39 @@ export default function TaskDetail() {
                       ))}
                     </div>
                   )}
+                  
+                  <Separator className="my-6" />
+                  
+                  <div className="mt-4">
+                    <h3 className="text-sm font-medium text-gray-500 mb-2">Adicionar comentário</h3>
+                    <div className="flex flex-col space-y-2">
+                      <Textarea
+                        ref={commentInputRef}
+                        placeholder="Escreva seu comentário..."
+                        value={newComment}
+                        onChange={(e) => setNewComment(e.target.value)}
+                        className="min-h-[100px]"
+                      />
+                      <div className="flex justify-end">
+                        <Button 
+                          onClick={handleAddComment}
+                          disabled={!newComment.trim() || addCommentMutation.isPending}
+                        >
+                          {addCommentMutation.isPending ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              Enviando...
+                            </>
+                          ) : (
+                            <>
+                              <Send className="mr-2 h-4 w-4" />
+                              Enviar Comentário
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
             </TabsContent>
@@ -345,6 +511,7 @@ export default function TaskDetail() {
         </div>
         
         <div>
+          {/* Ações da Tarefa */}
           <Card>
             <CardHeader>
               <CardTitle className="text-xl">Ações</CardTitle>
@@ -370,6 +537,131 @@ export default function TaskDetail() {
                 </Button>
               </div>
             </CardContent>
+          </Card>
+          
+          {/* Mudar Status */}
+          <Card className="mt-4">
+            <CardHeader>
+              <CardTitle className="text-lg">Status</CardTitle>
+              <CardDescription>Altere o status da tarefa</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                <Button
+                  variant={task.status === "todo" ? "default" : "outline"}
+                  className="w-full justify-start mb-2"
+                  onClick={() => handleStatusChange("todo")}
+                  disabled={task.status === "todo" || updateTaskStatusMutation.isPending}
+                >
+                  <Clock className="h-4 w-4 mr-2" />
+                  Não Iniciada
+                </Button>
+                
+                <Button
+                  variant={task.status === "in_progress" ? "default" : "outline"}
+                  className="w-full justify-start mb-2"
+                  onClick={() => handleStatusChange("in_progress")}
+                  disabled={task.status === "in_progress" || updateTaskStatusMutation.isPending}
+                >
+                  <ArrowRight className="h-4 w-4 mr-2" />
+                  Em Andamento
+                </Button>
+                
+                <Button
+                  variant={task.status === "review" ? "default" : "outline"}
+                  className="w-full justify-start mb-2"
+                  onClick={() => handleStatusChange("review")}
+                  disabled={task.status === "review" || updateTaskStatusMutation.isPending}
+                >
+                  <ListChecks className="h-4 w-4 mr-2" />
+                  Em Revisão
+                </Button>
+                
+                <Button
+                  variant={task.status === "completed" ? "default" : "outline"}
+                  className="w-full justify-start"
+                  onClick={() => handleStatusChange("completed")}
+                  disabled={task.status === "completed" || updateTaskStatusMutation.isPending}
+                >
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                  Concluída
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+          
+          {/* Checklist */}
+          <Card className="mt-4">
+            <CardHeader>
+              <CardTitle className="text-lg">Lista de Verificação</CardTitle>
+              <CardDescription>Gerenciar itens a serem concluídos</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {checklistLoading ? (
+                <div className="flex justify-center py-4">
+                  <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+                </div>
+              ) : checklistItems.length === 0 ? (
+                <div className="text-center py-4">
+                  <p className="text-gray-500 mb-2">Não há itens na lista</p>
+                </div>
+              ) : (
+                <div className="space-y-2 mb-4">
+                  {checklistItems.map((item: any) => (
+                    <div key={item.id} className="flex items-start space-x-2 py-1">
+                      <Checkbox
+                        id={`item-${item.id}`}
+                        checked={item.isCompleted}
+                        onCheckedChange={() => handleToggleChecklistItem(item.id, item.isCompleted)}
+                      />
+                      <label
+                        htmlFor={`item-${item.id}`}
+                        className={`text-sm ${
+                          item.isCompleted ? "line-through text-gray-400" : "text-gray-700"
+                        }`}
+                      >
+                        {item.text}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              )}
+              
+              <div className="flex items-center space-x-2 mt-4">
+                <Input
+                  placeholder="Adicionar novo item..."
+                  value={newChecklistItem}
+                  onChange={(e) => setNewChecklistItem(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      handleAddChecklistItem();
+                    }
+                  }}
+                />
+                <Button
+                  size="sm"
+                  onClick={handleAddChecklistItem}
+                  disabled={!newChecklistItem.trim() || addChecklistItemMutation.isPending}
+                >
+                  {addChecklistItemMutation.isPending ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Plus className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
+            </CardContent>
+            <CardFooter>
+              {checklistItems.length > 0 && (
+                <div className="w-full">
+                  <div className="flex justify-between text-sm mb-1">
+                    <span>{checklistItems.filter((item: any) => item.isCompleted).length} de {checklistItems.length} concluídos</span>
+                    <span>{Math.round((checklistItems.filter((item: any) => item.isCompleted).length / checklistItems.length) * 100)}%</span>
+                  </div>
+                  <Progress value={(checklistItems.filter((item: any) => item.isCompleted).length / checklistItems.length) * 100} />
+                </div>
+              )}
+            </CardFooter>
           </Card>
         </div>
       </div>
