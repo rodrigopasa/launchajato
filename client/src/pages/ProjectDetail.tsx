@@ -58,6 +58,7 @@ export default function ProjectDetail() {
 
   const [isEditProjectDialogOpen, setIsEditProjectDialogOpen] = useState(false);
   const [isDeleteProjectDialogOpen, setIsDeleteProjectDialogOpen] = useState(false);
+  const [deleteConfirmationStep, setDeleteConfirmationStep] = useState(1);
   const [isNewTaskDialogOpen, setIsNewTaskDialogOpen] = useState(false);
   const [isUploadFileDialogOpen, setIsUploadFileDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("overview");
