@@ -410,34 +410,15 @@ export default function Tasks() {
               ) : (
                 <div className="space-y-3">
                   {groupedTasks.completed.map((task: any) => (
-                    <div
+                    <TaskCard
                       key={task.id}
-                      className="bg-white rounded-lg shadow-sm p-3 border border-gray-100"
-                    >
-                      <div className="flex justify-between items-start mb-2">
-                        <h4 className="font-medium text-gray-800 line-through opacity-70">{task.name}</h4>
-                        <span
-                          className={`px-2 py-0.5 rounded-full text-xs font-medium
-                            ${task.priority === 'high' ? 'bg-red-100 text-red-800' : 
-                              task.priority === 'medium' ? 'bg-yellow-100 text-yellow-800' : 
-                              'bg-green-100 text-green-800'}`}
-                        >
-                          {task.priority === 'high' ? 'Alta' : 
-                           task.priority === 'medium' ? 'Média' : 'Baixa'}
-                        </span>
-                      </div>
-                      {task.description && (
-                        <p className="text-xs text-gray-600 mb-2 line-clamp-2 opacity-70">{task.description}</p>
-                      )}
-                      <div className="flex justify-between items-center text-xs text-gray-500">
-                        <span>Projeto {task.projectId}</span>
-                        {task.dueDate && (
-                          <span>
-                            {new Date(task.dueDate).toLocaleDateString('pt-BR')}
-                          </span>
-                        )}
-                      </div>
-                    </div>
+                      id={task.id}
+                      name={task.name}
+                      description={task.description}
+                      priority={task.priority}
+                      projectId={task.projectId}
+                      dueDate={task.dueDate}
+                    />
                   ))}
                 </div>
               )}
