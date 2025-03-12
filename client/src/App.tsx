@@ -170,7 +170,24 @@ function AppRoutes() {
           </Route>
           <Route path="/integrations">
             <PageTransition>
-              <Integrations />
+              {/* Protegendo a rota de Integrações, permitindo apenas usuários com função 'admin' */}
+              {useAuth().user?.role === 'admin' ? (
+                <Integrations />
+              ) : (
+                <div className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-800 flex flex-col items-center justify-center p-4">
+                  <div className="text-red-400 text-6xl mb-4">⚠️</div>
+                  <h1 className="text-2xl font-bold text-white mb-2">Acesso Negado</h1>
+                  <p className="text-slate-400 mb-6 text-center">
+                    Você não tem permissão para acessar esta página. É necessário ser um administrador.
+                  </p>
+                  <button 
+                    onClick={() => window.history.back()} 
+                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                  >
+                    Voltar
+                  </button>
+                </div>
+              )}
             </PageTransition>
           </Route>
           <Route path="/search">
@@ -180,7 +197,24 @@ function AppRoutes() {
           </Route>
           <Route path="/admin">
             <PageTransition>
-              <SuperAdmin />
+              {/* Protegendo a rota SuperAdmin, permitindo apenas usuários com função 'admin' */}
+              {useAuth().user?.role === 'admin' ? (
+                <SuperAdmin />
+              ) : (
+                <div className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-800 flex flex-col items-center justify-center p-4">
+                  <div className="text-red-400 text-6xl mb-4">⚠️</div>
+                  <h1 className="text-2xl font-bold text-white mb-2">Acesso Negado</h1>
+                  <p className="text-slate-400 mb-6 text-center">
+                    Você não tem permissão para acessar esta página. É necessário ser um administrador.
+                  </p>
+                  <button 
+                    onClick={() => window.history.back()} 
+                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                  >
+                    Voltar
+                  </button>
+                </div>
+              )}
             </PageTransition>
           </Route>
           <Route>
