@@ -377,7 +377,7 @@ export default function SuperAdmin() {
   const fetchAgencyUser = async (agencyId: number) => {
     try {
       // Buscar todos os usuários (idealmente deveria ter um endpoint específico getUsersByPartnerAgencyId)
-      const users = await apiRequest<any[]>("/api/users");
+      const users = await apiRequest<any[]>("GET", "/api/users");
       // Encontrar o usuário que tem o partnerAgencyId correspondente
       const agencyUser = users.find(user => user.partnerAgencyId === agencyId);
       return agencyUser;
@@ -577,7 +577,7 @@ export default function SuperAdmin() {
     isLoading: isLoadingPricing 
   } = useQuery<any>({
     queryKey: ["api/admin/pricing"],
-    queryFn: () => apiRequest<any>("/api/admin/pricing")
+    queryFn: () => apiRequest<any>("GET", "/api/admin/pricing")
       .catch(() => {
         // Se a API ainda não existir, use valores default
         return pricingPlans;
@@ -1701,7 +1701,9 @@ export default function SuperAdmin() {
                             <Input type="password" placeholder="••••••••" {...field} />
                           </FormControl>
                           <FormDescription>
-                            Senha com pelo menos 6 caracteres
+                            {selectedPartner 
+                              ? "Deixe em branco para manter a senha atual. Se informada, deve ter pelo menos 6 caracteres." 
+                              : "Senha com pelo menos 6 caracteres para o acesso do administrador da agência."}
                           </FormDescription>
                           <FormMessage />
                         </FormItem>
