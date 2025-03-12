@@ -361,12 +361,21 @@ export const budgetForecasts = pgTable("budget_forecasts", {
 });
 
 // Partner Agencies - para liberar acesso temporário
+export const partnerLevelEnum = pgEnum('partner_level', ['basic', 'silver', 'gold', 'platinum']);
+
 export const partnerAgencies = pgTable("partner_agencies", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
-  contactName: text("contact_name").notNull(),
+  contactName: text("contact_name"), // Renomeado de contactPerson - deixando opcional para compatibilidade
+  contactPerson: text("contact_person"), // Novo campo compatível com API
   email: text("email").notNull().unique(),
   phone: text("phone"),
+  website: text("website"),
+  address: text("address"),
+  // Níveis de parceria
+  partnerLevel: partnerLevelEnum("partner_level").default('basic'),
+  commission: integer("commission").default(0), // Porcentagem de comissão
+  // Campos de acesso
   accessLevel: text("access_level").default('trial'), // 'trial', 'partner', 'reseller'
   trialStartDate: timestamp("trial_start_date").defaultNow(),
   trialEndDate: timestamp("trial_end_date"),
@@ -609,8 +618,13 @@ export const insertBudgetForecastSchema = createInsertSchema(budgetForecasts).pi
 export const insertPartnerAgencySchema = createInsertSchema(partnerAgencies).pick({
   name: true,
   contactName: true,
+  contactPerson: true,
   email: true,
   phone: true,
+  website: true,
+  address: true,
+  partnerLevel: true,
+  commission: true,
   accessLevel: true,
   trialStartDate: true,
   trialEndDate: true,

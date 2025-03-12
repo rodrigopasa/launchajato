@@ -1725,9 +1725,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Mapear campos do frontend para o modelo de dados esperado pelo schema
       const mappedData = {
         name: body.name,
-        contactName: body.contactName,
+        contactName: body.contactName || null,
+        contactPerson: body.contactPerson || body.contactName || null,
         email: body.email,
         phone: body.phone || null,
+        website: body.website || null,
+        address: body.address || null,
+        partnerLevel: body.partnerLevel || 'basic',
+        commission: body.commission || 0,
         accessLevel: body.accessLevel || 'trial',
         trialStartDate: body.trialStartDate || new Date(),
         trialEndDate: body.trialEndDate || null,
@@ -1798,9 +1803,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Mapear campos do frontend para o modelo de dados esperado pelo schema
       const mappedData = {
         name: body.name,
-        contactName: body.contactName,
+        contactName: body.contactName || null,
+        contactPerson: body.contactPerson || body.contactName || null,
         email: body.email,
         phone: body.phone || null,
+        website: body.website || null,
+        address: body.address || null,
+        partnerLevel: body.partnerLevel || 'basic',
+        commission: body.commission || 0,
         accessLevel: body.accessLevel || 'trial',
         trialStartDate: body.trialStartDate || new Date(),
         trialEndDate: body.trialEndDate || null,
