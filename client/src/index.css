@@ -15,6 +15,13 @@
     -webkit-overflow-scrolling: touch;
     scroll-behavior: smooth;
   }
+
+  /* Melhorar contraste dos inputs */
+  input, textarea, select {
+    @apply text-slate-800 placeholder:text-slate-500;
+    @apply border-slate-300;
+    @apply bg-white;
+  }
   
   /* Remove duplicate declarations */
   :root {
