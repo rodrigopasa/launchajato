@@ -248,7 +248,7 @@ export default function SuperAdmin() {
     isLoading: isLoadingSettings 
   } = useQuery<any>({
     queryKey: ["api/admin/settings"],
-    queryFn: () => apiRequest<any>("/api/admin/settings")
+    queryFn: () => apiRequest<any>("GET", "/api/admin/settings")
   });
 
   // Buscar configuração do Mercado Pago
@@ -257,7 +257,7 @@ export default function SuperAdmin() {
     isLoading: isLoadingMercadoPago 
   } = useQuery<any>({
     queryKey: ["api/admin/payment-integrations/mercado-pago"],
-    queryFn: () => apiRequest<any>("/api/admin/payment-integrations/mercado-pago")
+    queryFn: () => apiRequest<any>("GET", "/api/admin/payment-integrations/mercado-pago")
   });
 
   // Buscar configuração do Stripe
@@ -266,7 +266,7 @@ export default function SuperAdmin() {
     isLoading: isLoadingStripe 
   } = useQuery<any>({
     queryKey: ["api/admin/payment-integrations/stripe"],
-    queryFn: () => apiRequest<any>("/api/admin/payment-integrations/stripe")
+    queryFn: () => apiRequest<any>("GET", "/api/admin/payment-integrations/stripe")
       .catch(() => {
         // Se a API ainda não existir, retorne valores padrão
         return {
@@ -287,7 +287,7 @@ export default function SuperAdmin() {
     isLoading: isLoadingPartners 
   } = useQuery<any[]>({
     queryKey: ["api/admin/partner-agencies"],
-    queryFn: () => apiRequest<any[]>("/api/admin/partner-agencies")
+    queryFn: () => apiRequest<any[]>("GET", "/api/admin/partner-agencies")
   });
 
   // Formulário de configurações do sistema
@@ -431,7 +431,7 @@ export default function SuperAdmin() {
   // Mutação para salvar configurações do sistema
   const saveSettingsMutation = useMutation({
     mutationFn: async (data: SystemSettingsValues) => {
-      return apiRequest("/api/admin/settings", "PUT", data);
+      return apiRequest("PUT", "/api/admin/settings", data);
     },
     onSuccess: () => {
       toast({
@@ -456,7 +456,7 @@ export default function SuperAdmin() {
   // Mutação para salvar configurações do Mercado Pago
   const saveMercadoPagoMutation = useMutation({
     mutationFn: async (data: MercadoPagoValues) => {
-      return apiRequest("/api/admin/payment-integrations/mercado-pago", "PUT", data);
+      return apiRequest("PUT", "/api/admin/payment-integrations/mercado-pago", data);
     },
     onSuccess: () => {
       toast({
@@ -482,7 +482,7 @@ export default function SuperAdmin() {
   // Mutação para salvar configurações do Stripe
   const saveStripeMutation = useMutation({
     mutationFn: async (data: StripeValues) => {
-      return apiRequest("/api/admin/payment-integrations/stripe", "PUT", data)
+      return apiRequest("PUT", "/api/admin/payment-integrations/stripe", data)
         .catch(() => {
           // Se a API ainda não existir, simule sucesso
           return data;
@@ -516,7 +516,7 @@ export default function SuperAdmin() {
         ? `/api/admin/partner-agencies/${selectedPartner.id}` 
         : "/api/admin/partner-agencies";
       const method = selectedPartner ? "PUT" : "POST";
-      return apiRequest(endpoint, method, data);
+      return apiRequest(method, endpoint, data);
     },
     onSuccess: () => {
       toast({
