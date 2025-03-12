@@ -815,6 +815,12 @@ export default function SuperAdmin() {
                 <CardDescription>
                   Configurações de integração com o Mercado Pago
                 </CardDescription>
+                <ApiConnectionStatus 
+                  apiName="Mercado Pago API"
+                  endpoint="/api/admin/payment-integrations/mercado-pago"
+                  className="mt-2"
+                  errorMessage="Verifique suas credenciais do Mercado Pago nas configurações abaixo."
+                />
               </CardHeader>
               <CardContent>
                 <Form {...mercadoPagoForm}>

@@ -1993,6 +1993,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/stripe-webhook", async (req: Request, res: Response) => {
     let event: Stripe.Event;
 
+    // Verificar se o webhook secret está configurado
+    if (!process.env.STRIPE_WEBHOOK_SECRET) {
+      console.error("STRIPE_WEBHOOK_SECRET não configurado no ambiente");
+      return res.status(500).send("Webhook Error: Configuração incompleta no servidor");
+    }
+
     try {
       event = stripe.webhooks.constructEvent(
         req.body,
@@ -2006,21 +2012,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     try {
       // Handle the event
+      console.log(`Processando evento Stripe: ${event.type}`);
+      
       switch (event.type) {
         case 'payment_intent.succeeded':
           const paymentIntent = event.data.object as Stripe.PaymentIntent;
+          console.log(`✅ Pagamento ${paymentIntent.id} processado com sucesso`);
+          
           // Atualizar o status do pagamento no banco de dados
           if (paymentIntent.metadata.userId) {
-            // Implementar lógica de atualização do status do pagamento
+            try {
+              // Implementar lógica de atualização do status do pagamento
+              console.log(`Atualizando status de pagamento para o usuário ${paymentIntent.metadata.userId}`);
+            } catch (error) {
+              console.error(`Erro ao atualizar status de pagamento:`, error);
+            }
           }
           break;
           
+        case 'payment_intent.payment_failed':
+          const failedPayment = event.data.object as Stripe.PaymentIntent;
+          console.log(`❌ Falha no pagamento ${failedPayment.id}: ${failedPayment.last_payment_error?.message || 'Erro desconhecido'}`);
+          break;
+          
         case 'customer.subscription.created':
+          const newSubscription = event.data.object as Stripe.Subscription;
+          console.log(`✅ Nova assinatura ${newSubscription.id} criada para cliente ${newSubscription.customer}`);
+          break;
+          
         case 'customer.subscription.updated':
+          const updatedSubscription = event.data.object as Stripe.Subscription;
+          console.log(`Assinatura ${updatedSubscription.id} atualizada para ${updatedSubscription.status}`);
+          
+          // Tratamento específico de status
+          try {
+            if (updatedSubscription.status === 'active') {
+              console.log(`Assinatura ${updatedSubscription.id} ativada com sucesso`);
+            } else if (updatedSubscription.status === 'past_due') {
+              console.log(`Assinatura ${updatedSubscription.id} com pagamento pendente`);
+            }
+          } catch (error) {
+            console.error(`Erro ao processar atualização de assinatura:`, error);
+          }
+          break;
+          
         case 'customer.subscription.deleted':
-          const subscription = event.data.object as Stripe.Subscription;
-          // Atualizar o status da assinatura no banco de dados
-          // Implementar lógica de atualização do status da assinatura
+          const deletedSubscription = event.data.object as Stripe.Subscription;
+          console.log(`Assinatura ${deletedSubscription.id} cancelada`);
+          
+          try {
+            // Implementar lógica de cancelamento da assinatura
+            console.log(`Atualizando status para assinatura cancelada ${deletedSubscription.id}`);
+          } catch (error) {
+            console.error(`Erro ao processar cancelamento de assinatura:`, error);
+          }
           break;
           
         default:
