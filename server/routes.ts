@@ -1708,17 +1708,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
         body.trialEndDate = new Date(body.trialEndDate);
       }
       
-      // Adicionar o ID do usuário atual como criador
-      const agencyData = {
-        ...body,
+      console.log("Recebidos dados de agência:", body);
+      
+      // Mapear campos do frontend para o modelo de dados esperado pelo schema
+      const mappedData = {
+        name: body.name,
+        contactName: body.contactName,
+        email: body.email,
+        phone: body.phone || null,
+        accessLevel: body.partnerLevel || 'trial',
+        trialStartDate: body.trialStartDate || new Date(),
+        trialEndDate: body.trialEndDate || null,
+        maxOrganizations: body.maxOrganizations || 1,
+        status: body.status || 'active',
+        notes: body.notes || null,
         createdBy: req.session.userId!
       };
-
-      const agency = await storage.createPartnerAgency(agencyData);
+      
+      console.log("Dados mapeados para agência:", mappedData);
+      
+      // Criar agência com os dados mapeados corretamente
+      const agency = await storage.createPartnerAgency(mappedData);
+      console.log("Agência criada com sucesso:", agency);
+      
       return res.status(201).json(agency);
     } catch (error) {
-      console.error("Erro ao criar agência parceira:", error);
-      return res.status(500).json({ message: "Erro ao criar agência parceira" });
+      console.error("Erro ao criar agência parceira:", error, (error as any).stack);
+      return res.status(500).json({ message: `Erro ao criar agência parceira: ${(error as Error).message}` });
     }
   });
 
@@ -1735,14 +1751,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
         body.trialEndDate = new Date(body.trialEndDate);
       }
       
-      const agency = await storage.updatePartnerAgency(agencyId, body);
+      console.log("Recebidos dados para atualização de agência:", body);
+      
+      // Mapear campos do frontend para o modelo de dados esperado pelo schema
+      const mappedData = {
+        name: body.name,
+        contactName: body.contactName,
+        email: body.email,
+        phone: body.phone || null,
+        accessLevel: body.partnerLevel || 'trial',
+        trialStartDate: body.trialStartDate || new Date(),
+        trialEndDate: body.trialEndDate || null,
+        maxOrganizations: body.maxOrganizations || 1,
+        status: body.status || 'active',
+        notes: body.notes || null
+      };
+      
+      console.log("Dados mapeados para atualização de agência:", mappedData);
+      
+      const agency = await storage.updatePartnerAgency(agencyId, mappedData);
       if (!agency) {
         return res.status(404).json({ message: "Agência parceira não encontrada" });
       }
+      
+      console.log("Agência atualizada com sucesso:", agency);
       return res.json(agency);
     } catch (error) {
-      console.error("Erro ao atualizar agência parceira:", error);
-      return res.status(500).json({ message: "Erro ao atualizar agência parceira" });
+      console.error("Erro ao atualizar agência parceira:", error, (error as any).stack);
+      return res.status(500).json({ message: `Erro ao atualizar agência parceira: ${(error as Error).message}` });
     }
   });
 
