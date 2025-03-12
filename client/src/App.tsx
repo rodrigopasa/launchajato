@@ -22,6 +22,7 @@ import Search from "@/pages/Search";
 import LandingPage from "@/pages/LandingPage";
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
+import SuperAdmin from "@/pages/SuperAdmin";
 import { useAuth, AuthProvider } from "./contexts/AuthContext";
 import { SidebarProvider } from "./contexts/SidebarContext";
 import { SettingsProvider } from "./contexts/SettingsContext";
@@ -170,6 +171,11 @@ function AppRoutes() {
           <Route path="/search">
             <PageTransition>
               <Search />
+            </PageTransition>
+          </Route>
+          <Route path="/admin">
+            <PageTransition>
+              <SuperAdmin />
             </PageTransition>
           </Route>
           <Route>

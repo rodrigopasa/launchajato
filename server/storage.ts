@@ -1531,15 +1531,25 @@ async function initializeAdmin() {
       await storage.createUser({
         username: "admin",
         password: "admin123",
-        name: "Administrador",
-        email: "admin@launchpro.com",
+        name: "Super Administrador",
+        email: "admin@launchrocket.com",
         role: "admin",
-        avatar: ""
+        profession: "other",
+        bio: "Administrador do sistema LaunchRocket",
+        active: true
       });
-      console.log("Usuário admin criado com sucesso");
+      console.log("Usuário Super Admin criado com sucesso");
+    } else {
+      // Atualizar a senha do admin se necessário
+      if (adminUser.password !== "admin123") {
+        await storage.updateUser(adminUser.id, {
+          password: "admin123"
+        });
+        console.log("Senha do usuário Super Admin atualizada");
+      }
     }
   } catch (error) {
-    console.error("Erro ao inicializar usuário admin:", error);
+    console.error("Erro ao inicializar usuário Super Admin:", error);
   }
 }
 
