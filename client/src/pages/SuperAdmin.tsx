@@ -178,7 +178,11 @@ const partnerAgencySchema = z.object({
   notes: z.string().optional(),
   // Campos de autenticação
   username: z.string().min(3, "Nome de usuário deve ter pelo menos 3 caracteres"),
-  password: z.string().min(6, "Senha deve ter pelo menos 6 caracteres"),
+  // Senha é obrigatória apenas para novas agências
+  password: z.union([
+    z.string().min(6, "Senha deve ter pelo menos 6 caracteres"),
+    z.string().length(0) // Permite string vazia para edição
+  ]),
 });
 
 type PartnerAgencyValues = z.infer<typeof partnerAgencySchema>;
@@ -369,6 +373,20 @@ export default function SuperAdmin() {
     },
   });
 
+  // Buscar usuário associado a uma agência parceira
+  const fetchAgencyUser = async (agencyId: number) => {
+    try {
+      // Buscar todos os usuários (idealmente deveria ter um endpoint específico getUsersByPartnerAgencyId)
+      const users = await apiRequest<any[]>("/api/users");
+      // Encontrar o usuário que tem o partnerAgencyId correspondente
+      const agencyUser = users.find(user => user.partnerAgencyId === agencyId);
+      return agencyUser;
+    } catch (error) {
+      console.error("Erro ao buscar usuário da agência:", error);
+      return null;
+    }
+  };
+
   // Atualizar valores quando uma agência for selecionada para edição
   useEffect(() => {
     if (selectedPartner) {
@@ -376,11 +394,23 @@ export default function SuperAdmin() {
       const trialStartDate = selectedPartner.trialStartDate ? new Date(selectedPartner.trialStartDate) : new Date();
       const trialEndDate = selectedPartner.trialEndDate ? new Date(selectedPartner.trialEndDate) : undefined;
       
+      // Inicialmente, resetar o formulário com os dados da agência
       partnerAgencyForm.reset({
         ...selectedPartner,
         trialStartDate,
-        trialEndDate
+        trialEndDate,
+        username: "", // Será preenchido depois de buscar o usuário
+        password: "" // Senha vazia ao editar
       });
+      
+      // Buscar e preencher os dados do usuário associado à agência
+      if (selectedPartner.id) {
+        fetchAgencyUser(selectedPartner.id).then(user => {
+          if (user) {
+            partnerAgencyForm.setValue("username", user.username);
+          }
+        });
+      }
     } else {
       partnerAgencyForm.reset({
         name: "",
