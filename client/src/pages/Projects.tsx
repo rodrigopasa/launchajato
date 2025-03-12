@@ -112,7 +112,7 @@ export default function Projects() {
   });
 
   // Filter projects by search term and status
-  const filteredProjects = projects
+  const filteredProjects = Array.isArray(projects)
     ? projects.filter((project: any) => {
         const matchesSearch = project.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
                             (project.description && project.description.toLowerCase().includes(searchTerm.toLowerCase()));

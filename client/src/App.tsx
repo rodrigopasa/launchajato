@@ -109,6 +109,25 @@ function AppRoutes() {
   }
 
   // Renderizar páginas protegidas
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'admin';
+  
+  const AccessDeniedScreen = () => (
+    <div className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-800 flex flex-col items-center justify-center p-4">
+      <div className="text-red-400 text-6xl mb-4">⚠️</div>
+      <h1 className="text-2xl font-bold text-white mb-2">Acesso Negado</h1>
+      <p className="text-slate-400 mb-6 text-center">
+        Você não tem permissão para acessar esta página. É necessário ser um administrador.
+      </p>
+      <button 
+        onClick={() => window.history.back()} 
+        className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+      >
+        Voltar
+      </button>
+    </div>
+  );
+
   return (
     <MainLayout>
       <AnimatePresence mode="wait">
@@ -171,22 +190,10 @@ function AppRoutes() {
           <Route path="/integrations">
             <PageTransition>
               {/* Protegendo a rota de Integrações, permitindo apenas usuários com função 'admin' */}
-              {useAuth().user?.role === 'admin' ? (
+              {isAdmin ? (
                 <Integrations />
               ) : (
-                <div className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-800 flex flex-col items-center justify-center p-4">
-                  <div className="text-red-400 text-6xl mb-4">⚠️</div>
-                  <h1 className="text-2xl font-bold text-white mb-2">Acesso Negado</h1>
-                  <p className="text-slate-400 mb-6 text-center">
-                    Você não tem permissão para acessar esta página. É necessário ser um administrador.
-                  </p>
-                  <button 
-                    onClick={() => window.history.back()} 
-                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-                  >
-                    Voltar
-                  </button>
-                </div>
+                <AccessDeniedScreen />
               )}
             </PageTransition>
           </Route>
@@ -198,22 +205,10 @@ function AppRoutes() {
           <Route path="/admin">
             <PageTransition>
               {/* Protegendo a rota SuperAdmin, permitindo apenas usuários com função 'admin' */}
-              {useAuth().user?.role === 'admin' ? (
+              {isAdmin ? (
                 <SuperAdmin />
               ) : (
-                <div className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-800 flex flex-col items-center justify-center p-4">
-                  <div className="text-red-400 text-6xl mb-4">⚠️</div>
-                  <h1 className="text-2xl font-bold text-white mb-2">Acesso Negado</h1>
-                  <p className="text-slate-400 mb-6 text-center">
-                    Você não tem permissão para acessar esta página. É necessário ser um administrador.
-                  </p>
-                  <button 
-                    onClick={() => window.history.back()} 
-                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-                  >
-                    Voltar
-                  </button>
-                </div>
+                <AccessDeniedScreen />
               )}
             </PageTransition>
           </Route>
