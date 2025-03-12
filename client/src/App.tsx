@@ -1,5 +1,7 @@
 import { Switch, Route, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
+import Checkout from "@/pages/checkout";
+import PaymentSuccess from "@/pages/payment-success";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import NotFound from "@/pages/not-found";
@@ -59,16 +61,14 @@ function AppRoutes() {
     return null;
   }
 
-  if (!isAuthenticated && 
-      location !== "/" && 
-      location !== "/login" && 
-      location !== "/register") {
+  const publicPaths = ["/", "/login", "/register", "/checkout", "/payment-success"];
+  if (!isAuthenticated && !publicPaths.includes(location)) {
     setLocation("/login");
     return null;
   }
 
   // Renderizar páginas públicas
-  if (location === "/" || location === "/login" || location === "/register") {
+  if (publicPaths.includes(location)) {
     return (
       <AnimatePresence mode="wait">
         <Switch location={location} key={location}>
@@ -85,6 +85,16 @@ function AppRoutes() {
           <Route path="/register">
             <PageTransition>
               <Register />
+            </PageTransition>
+          </Route>
+          <Route path="/checkout">
+            <PageTransition>
+              <Checkout />
+            </PageTransition>
+          </Route>
+          <Route path="/payment-success">
+            <PageTransition>
+              <PaymentSuccess />
             </PageTransition>
           </Route>
         </Switch>
