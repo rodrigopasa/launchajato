@@ -2139,10 +2139,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { projectId } = req.params;
       const projectIdNum = Number(projectId);
       
-      // Validar dados com o schema
+      // Obter o projeto para associar à organização correta
+      const project = await storage.getProject(projectIdNum);
+      if (!project) {
+        return res.status(404).json({ message: "Projeto não encontrado" });
+      }
+      
+      // Validar dados com o schema e incluir campos obrigatórios
       const categoryData = insertBudgetCategorySchema.parse({
         ...req.body,
-        projectId: projectIdNum
+        projectId: projectIdNum,
+        organizationId: project.organizationId || 1, // Usa o ID da organização do projeto ou default para 1
+        createdBy: req.user!.id // Usa o ID do usuário autenticado
       });
       
       const newCategory = await storage.createBudgetCategory(categoryData);
