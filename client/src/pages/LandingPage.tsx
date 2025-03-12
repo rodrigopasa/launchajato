@@ -112,7 +112,7 @@ export default function LandingPage() {
             <div className="absolute -inset-0.5 rounded-lg bg-gradient-to-r from-primary to-purple-500 opacity-75 blur"></div>
             <div className="bg-slate-900 p-8 rounded-lg relative">
               <img 
-                src="https://via.placeholder.com/600x400?text=LaunchRocket+Dashboard" 
+                src="/dashboard-preview.svg" 
                 alt="LaunchRocket Dashboard" 
                 className="rounded-lg shadow-xl w-full"
               />

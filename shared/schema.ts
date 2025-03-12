@@ -10,8 +10,9 @@ export const taskPriorityEnum = pgEnum('task_priority', ['low', 'medium', 'high'
 export const taskStatusEnum = pgEnum('task_status', ['todo', 'in_progress', 'review', 'completed']);
 export const professionEnum = pgEnum('profession', ['developer', 'designer', 'social_media', 'marketing', 'content_writer', 'project_manager', 'qa_tester', 'devops', 'product_owner', 'data_analyst', 'ui_ux', 'business_analyst', 'other']);
 export const integrationTypeEnum = pgEnum('integration_type', ['whatsapp', 'whatsapp_web', 'email', 'sms', 'other']);
-export const subscriptionPlanEnum = pgEnum('subscription_plan', ['free', 'starter', 'professional', 'enterprise', 'custom']);
+export const subscriptionPlanEnum = pgEnum('subscription_plan', ['free', 'starter', 'professional', 'enterprise', 'custom', 'partner_trial']);
 export const subscriptionStatusEnum = pgEnum('subscription_status', ['active', 'trialing', 'past_due', 'canceled', 'unpaid']);
+export const paymentMethodEnum = pgEnum('payment_method', ['credit_card', 'bank_transfer', 'mercado_pago', 'free_trial', 'partner_offer']);
 
 // Organizations table (multi-tenant)
 export const organizations = pgTable("organizations", {
@@ -224,6 +225,53 @@ export const integrations = pgTable("integrations", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Payments Integrations - específico para métodos de pagamento
+export const paymentIntegrations = pgTable("payment_integrations", {
+  id: serial("id").primaryKey(),
+  organizationId: integer("organization_id").notNull().references(() => organizations.id, { onDelete: 'cascade' }),
+  provider: text("provider").notNull(), // 'mercado_pago', 'stripe', etc
+  name: text("name").notNull(),
+  enabled: boolean("enabled").notNull().default(false),
+  isDefault: boolean("is_default").default(false),
+  credentials: jsonb("credentials"), // armazena credenciais API como access_token
+  webhook_url: text("webhook_url"),
+  webhook_secret: text("webhook_secret"),
+  configuredBy: integer("configured_by").notNull().references(() => users.id),
+  settings: jsonb("settings").default({}), // configurações específicas do provedor
+  testMode: boolean("test_mode").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Super Admin Settings
+export const adminSettings = pgTable("admin_settings", {
+  id: serial("id").primaryKey(),
+  settingKey: text("setting_key").notNull().unique(),
+  settingValue: jsonb("setting_value"),
+  description: text("description"),
+  category: text("category").default('general'),
+  updatedBy: integer("updated_by").references(() => users.id),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Partner Agencies - para liberar acesso temporário
+export const partnerAgencies = pgTable("partner_agencies", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  contactName: text("contact_name").notNull(),
+  email: text("email").notNull().unique(),
+  phone: text("phone"),
+  accessLevel: text("access_level").default('trial'), // 'trial', 'partner', 'reseller'
+  trialStartDate: timestamp("trial_start_date").defaultNow(),
+  trialEndDate: timestamp("trial_end_date"),
+  maxOrganizations: integer("max_organizations").default(1),
+  status: text("status").default('active'), // 'active', 'suspended', 'expired'
+  notes: text("notes"),
+  createdBy: integer("created_by").notNull().references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Insert schemas
 export const insertOrganizationSchema = createInsertSchema(organizations).pick({
   name: true,
@@ -363,6 +411,42 @@ export const insertIntegrationSchema = createInsertSchema(integrations).pick({
   configuredBy: true,
 });
 
+export const insertPaymentIntegrationSchema = createInsertSchema(paymentIntegrations).pick({
+  organizationId: true,
+  provider: true,
+  name: true,
+  enabled: true,
+  isDefault: true,
+  credentials: true,
+  webhook_url: true,
+  webhook_secret: true,
+  configuredBy: true,
+  settings: true,
+  testMode: true,
+});
+
+export const insertAdminSettingSchema = createInsertSchema(adminSettings).pick({
+  settingKey: true,
+  settingValue: true,
+  description: true,
+  category: true,
+  updatedBy: true,
+});
+
+export const insertPartnerAgencySchema = createInsertSchema(partnerAgencies).pick({
+  name: true,
+  contactName: true,
+  email: true,
+  phone: true,
+  accessLevel: true,
+  trialStartDate: true,
+  trialEndDate: true,
+  maxOrganizations: true,
+  status: true,
+  notes: true,
+  createdBy: true,
+});
+
 // Types para organização
 export type InsertOrganization = z.infer<typeof insertOrganizationSchema>;
 export type Organization = typeof organizations.$inferSelect;
@@ -406,3 +490,12 @@ export type Comment = typeof comments.$inferSelect;
 
 export type InsertIntegration = z.infer<typeof insertIntegrationSchema>;
 export type Integration = typeof integrations.$inferSelect;
+
+export type InsertPaymentIntegration = z.infer<typeof insertPaymentIntegrationSchema>;
+export type PaymentIntegration = typeof paymentIntegrations.$inferSelect;
+
+export type InsertAdminSetting = z.infer<typeof insertAdminSettingSchema>;
+export type AdminSetting = typeof adminSettings.$inferSelect;
+
+export type InsertPartnerAgency = z.infer<typeof insertPartnerAgencySchema>;
+export type PartnerAgency = typeof partnerAgencies.$inferSelect;
