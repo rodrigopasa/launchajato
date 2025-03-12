@@ -1,47 +1,135 @@
 
 import { useAuth } from "@/contexts/AuthContext";
 import { useSidebar } from "@/contexts/SidebarContext";
-import { Menu, Bell, X } from "lucide-react";
+import { Menu, Bell, X, Home, LayoutPanelLeft, CheckSquare, LogOut } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
+import { motion, AnimatePresence } from "framer-motion";
+import { Link, useLocation } from "wouter";
+import { transitions } from "@/lib/animations";
 
 export default function MobileNavbar() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const { toggleMobileOpen, mobileOpen } = useSidebar();
+  const [location] = useLocation();
 
   return (
-    <div className="md:hidden bg-gray-900 text-white w-full h-16 fixed top-0 left-0 z-30 flex items-center justify-between px-4 shadow-md">
-      <div className="flex items-center">
-        <button
-          onClick={toggleMobileOpen}
-          className="text-gray-400 hover:text-white mr-3 p-2 rounded-md transition-colors"
-          aria-label={mobileOpen ? "Fechar menu" : "Abrir menu"}
-        >
-          {mobileOpen ? (
-            <X className="h-6 w-6" />
-          ) : (
-            <Menu className="h-6 w-6" />
+    <>
+      {/* Top navbar */}
+      <motion.div 
+        className="md:hidden bg-gray-900 text-white w-full h-16 fixed top-0 left-0 z-30 flex items-center justify-between px-4 shadow-md"
+        initial={{ y: -100 }}
+        animate={{ y: 0 }}
+        transition={transitions.spring}
+      >
+        <div className="flex items-center">
+          <motion.button
+            onClick={toggleMobileOpen}
+            className="text-gray-400 hover:text-white mr-3 p-2 rounded-md transition-colors"
+            aria-label={mobileOpen ? "Fechar menu" : "Abrir menu"}
+            whileTap={{ scale: 0.9 }}
+          >
+            <AnimatePresence mode="wait" initial={false}>
+              <motion.div
+                key={mobileOpen ? "close" : "open"}
+                initial={{ rotate: -90, opacity: 0 }}
+                animate={{ rotate: 0, opacity: 1 }}
+                exit={{ rotate: 90, opacity: 0 }}
+                transition={{ duration: 0.2 }}
+              >
+                {mobileOpen ? (
+                  <X className="h-6 w-6" />
+                ) : (
+                  <Menu className="h-6 w-6" />
+                )}
+              </motion.div>
+            </AnimatePresence>
+          </motion.button>
+          <h1 className="text-xl font-semibold">LaunchRocket</h1>
+        </div>
+        <div className="flex items-center">
+          <motion.button 
+            className="text-gray-400 hover:text-white mr-4 relative p-2 rounded-md transition-colors" 
+            aria-label="Notificações"
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+          >
+            <Bell className="h-5 w-5" />
+            <motion.span 
+              className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full"
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={transitions.spring}
+            ></motion.span>
+          </motion.button>
+          {user && (
+            <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }}>
+              <Avatar className="border-2 border-gray-700">
+                <AvatarImage src={user.avatar} alt={user.name} />
+                <AvatarFallback className="bg-primary text-white">
+                  {user.name?.substring(0, 2).toUpperCase() || "U"}
+                </AvatarFallback>
+              </Avatar>
+            </motion.div>
           )}
-        </button>
-        <h1 className="text-xl font-semibold">LaunchPro</h1>
-      </div>
-      <div className="flex items-center">
-        <button 
-          className="text-gray-400 hover:text-white mr-4 relative p-2 rounded-md transition-colors" 
-          aria-label="Notificações"
+        </div>
+      </motion.div>
+
+      {/* Bottom navigation */}
+      <motion.div 
+        className="md:hidden bg-gray-900 text-white w-full h-16 fixed bottom-0 left-0 z-30 flex items-center justify-around px-2 shadow-[0_-2px_10px_rgba(0,0,0,0.1)]"
+        initial={{ y: 100 }}
+        animate={{ y: 0 }}
+        transition={transitions.spring}
+      >
+        <Link href="/">
+          <motion.div 
+            className={cn(
+              "flex flex-col items-center justify-center p-2 rounded-lg",
+              location === "/" ? "text-primary" : "text-gray-400"
+            )}
+            whileTap={{ scale: 0.9 }}
+          >
+            <Home className="h-6 w-6" />
+            <span className="text-xs mt-1">Início</span>
+          </motion.div>
+        </Link>
+        
+        <Link href="/projects">
+          <motion.div 
+            className={cn(
+              "flex flex-col items-center justify-center p-2 rounded-lg",
+              location.startsWith("/projects") ? "text-primary" : "text-gray-400"
+            )}
+            whileTap={{ scale: 0.9 }}
+          >
+            <LayoutPanelLeft className="h-6 w-6" />
+            <span className="text-xs mt-1">Projetos</span>
+          </motion.div>
+        </Link>
+
+        <Link href="/tasks">
+          <motion.div 
+            className={cn(
+              "flex flex-col items-center justify-center p-2 rounded-lg",
+              location.startsWith("/tasks") ? "text-primary" : "text-gray-400"
+            )}
+            whileTap={{ scale: 0.9 }}
+          >
+            <CheckSquare className="h-6 w-6" />
+            <span className="text-xs mt-1">Tarefas</span>
+          </motion.div>
+        </Link>
+
+        <motion.div 
+          className="flex flex-col items-center justify-center p-2 rounded-lg text-gray-400"
+          whileTap={{ scale: 0.9 }}
+          onClick={() => logout()}
         >
-          <Bell className="h-5 w-5" />
-          <span className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full"></span>
-        </button>
-        {user && (
-          <Avatar className="border-2 border-gray-700">
-            <AvatarImage src={user.avatar} alt={user.name} />
-            <AvatarFallback className="bg-primary text-white">
-              {user.name?.substring(0, 2).toUpperCase() || "U"}
-            </AvatarFallback>
-          </Avatar>
-        )}
-      </div>
-    </div>
+          <LogOut className="h-6 w-6" />
+          <span className="text-xs mt-1">Sair</span>
+        </motion.div>
+      </motion.div>
+    </>
   );
 }
