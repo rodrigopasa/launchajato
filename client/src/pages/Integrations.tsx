@@ -287,15 +287,9 @@ export default function Integrations() {
       };
       
       if (whatsappIntegration) {
-        return apiRequest(`/api/integrations/${whatsappIntegration.id}`, {
-          method: 'PUT',
-          body: JSON.stringify(payload)
-        });
+        return apiRequest('PUT', `/api/integrations/${whatsappIntegration.id}`, payload);
       } else {
-        return apiRequest('/api/integrations', {
-          method: 'POST',
-          body: JSON.stringify(payload)
-        });
+        return apiRequest('POST', '/api/integrations', payload);
       }
     },
     onSuccess: () => {
@@ -317,9 +311,7 @@ export default function Integrations() {
   // Mutation para excluir integração
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => {
-      return apiRequest(`/api/integrations/${id}`, {
-        method: 'DELETE'
-      });
+      return apiRequest('DELETE', `/api/integrations/${id}`);
     },
     onSuccess: () => {
       toast({
