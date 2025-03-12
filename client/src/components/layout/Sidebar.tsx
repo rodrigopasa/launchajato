@@ -72,10 +72,11 @@ export default function Sidebar() {
 
       <aside
         className={cn(
-          "bg-gray-900 text-white flex-shrink-0 fixed lg:relative z-20 h-full",
+          "bg-gray-900 text-white flex-shrink-0 fixed lg:relative z-40 h-full",
           collapsed && !mobile ? "w-20" : "w-64",
           mobile ? (mobileOpen ? "left-0" : "-left-64") : "left-0",
-          "transition-all duration-300 ease-in-out"
+          "transition-all duration-300 ease-in-out",
+          mobile && "shadow-xl"
         )}
       >
         <div className="p-4 flex items-center justify-between border-b border-gray-800">

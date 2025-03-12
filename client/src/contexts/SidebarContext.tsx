@@ -31,6 +31,17 @@ export const SidebarProvider = ({ children }: { children: ReactNode }) => {
     if (!isMobile && mobileOpen) {
       setMobileOpen(false);
     }
+
+    // Lock body scroll when mobile sidebar is open
+    if (isMobile && mobileOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+
+    return () => {
+      document.body.style.overflow = '';
+    };
   }, [isMobile, mobileOpen]);
 
   const toggleCollapsed = () => {
