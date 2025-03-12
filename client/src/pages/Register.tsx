@@ -28,6 +28,39 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 
+// Schemas específicos para cada etapa
+const step1Schema = z.object({
+  organizationName: z.string().min(2, {
+    message: "O nome da organização deve ter pelo menos 2 caracteres",
+  }),
+});
+
+const step2Schema = z.object({
+  name: z.string().min(2, {
+    message: "O nome deve ter pelo menos 2 caracteres",
+  }),
+  email: z.string().email({
+    message: "Digite um endereço de email válido",
+  }),
+  phone: z.string().min(10, {
+    message: "Digite um número de telefone válido",
+  }),
+});
+
+const step3Schema = z.object({
+  username: z.string().min(3, {
+    message: "O nome de usuário deve ter pelo menos 3 caracteres",
+  }),
+  password: z.string().min(6, {
+    message: "A senha deve ter pelo menos 6 caracteres",
+  }),
+  confirmPassword: z.string(),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "As senhas não coincidem",
+  path: ["confirmPassword"],
+});
+
+// Schema completo para o formulário
 const formSchema = z.object({
   organizationName: z.string().min(2, {
     message: "O nome da organização deve ter pelo menos 2 caracteres",
@@ -74,9 +107,33 @@ export default function Register() {
     },
   });
 
+  const validateStep = () => {
+    switch (currentStep) {
+      case 1:
+        return form.trigger("organizationName");
+      case 2:
+        return Promise.all([
+          form.trigger("name"),
+          form.trigger("email"),
+          form.trigger("phone")
+        ]).then(results => results.every(Boolean));
+      case 3:
+        return Promise.all([
+          form.trigger("username"),
+          form.trigger("password"),
+          form.trigger("confirmPassword")
+        ]).then(results => results.every(Boolean));
+      default:
+        return Promise.resolve(true);
+    }
+  };
+
   const onSubmit = async (data: FormValues) => {
     if (currentStep < 3) {
-      setCurrentStep(currentStep + 1);
+      const isValid = await validateStep();
+      if (isValid) {
+        setCurrentStep(currentStep + 1);
+      }
       return;
     }
 
