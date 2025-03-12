@@ -23,6 +23,7 @@ import { storage } from "./storage";
 import session from "express-session";
 import { isAuthenticated, isAdmin, isProjectMember, hasProjectRole } from "./middleware/auth";
 import { upload, deleteFile } from "./middleware/upload";
+import { isSuperAdmin } from "./middleware/superadmin";
 import { z } from "zod";
 import fs from "fs";
 import path from "path";
@@ -1546,8 +1547,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Rotas de Super Admin
-  // Importar o middleware de verificação de superadmin
-  import { isSuperAdmin } from "./middleware/superadmin";
 
   // Configurações do sistema
   app.get("/api/admin/settings", isSuperAdmin, async (req: Request, res: Response) => {
