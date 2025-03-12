@@ -151,6 +151,19 @@ const mercadoPagoSchema = z.object({
 
 type MercadoPagoValues = z.infer<typeof mercadoPagoSchema>;
 
+// Formulário para Stripe
+const stripeSchema = z.object({
+  secretKey: z.string().min(1, "Chave secreta é obrigatória"),
+  publicKey: z.string().min(1, "Chave pública é obrigatória"),
+  enabled: z.boolean().default(true),
+  testMode: z.boolean().default(true),
+  webhookUrl: z.string().url().optional().or(z.literal('')),
+  webhookSecret: z.string().optional(),
+  priceId: z.string().optional(),
+});
+
+type StripeValues = z.infer<typeof stripeSchema>;
+
 // Formulário para Agências Parceiras
 const partnerAgencySchema = z.object({
   name: z.string().min(3, "Nome da agência é obrigatório"),
@@ -174,6 +187,7 @@ export default function SuperAdmin() {
   const [partnerDialogOpen, setPartnerDialogOpen] = useState(false);
   const [selectedPartner, setSelectedPartner] = useState<any | null>(null);
   const [mercadoPagoDialogOpen, setMercadoPagoDialogOpen] = useState(false);
+  const [stripeDialogOpen, setStripeDialogOpen] = useState(false);
   
   // Estado para armazenar dados de preços
   const [pricingPlans, setPricingPlans] = useState({

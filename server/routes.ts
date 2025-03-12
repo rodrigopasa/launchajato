@@ -8,6 +8,7 @@ import { z } from "zod";
 import fs from "fs";
 import path from "path";
 import { validateRequest } from "./middleware/validation";
+import Stripe from "stripe";
 import { 
   insertUserSchema, 
   insertProjectSchema, 
