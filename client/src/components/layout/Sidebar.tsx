@@ -320,14 +320,24 @@ export default function Sidebar() {
                 WhatsApp ChatBot
               </NavItem>
               {user?.role === 'admin' && (
-                <NavItem
-                  href="/integrations"
-                  icon={<Link2 className="h-5 w-5" />}
-                  active={location.startsWith("/integrations")}
-                  collapsed={collapsed}
-                >
-                  Integrações
-                </NavItem>
+                <>
+                  <NavItem
+                    href="/integrations"
+                    icon={<Link2 className="h-5 w-5" />}
+                    active={location.startsWith("/integrations")}
+                    collapsed={collapsed}
+                  >
+                    Integrações
+                  </NavItem>
+                  <NavItem
+                    href="/admin"
+                    icon={<Shield className="h-5 w-5" />}
+                    active={location.startsWith("/admin")}
+                    collapsed={collapsed}
+                  >
+                    Super Admin
+                  </NavItem>
+                </>
               )}
             </nav>
           </div>
