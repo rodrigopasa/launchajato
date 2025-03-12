@@ -185,7 +185,7 @@ function AppRoutes() {
           </Route>
         </Switch>
       </AnimatePresence>
-    </MainLayout>
+    </MainLayout>t>
   );
 }
 
