@@ -3,6 +3,7 @@ import {
   tasks, checklistItems, files, activities, comments, integrations,
   organizations, organizationSettings, subscriptions, organizationMembers,
   paymentIntegrations, adminSettings, partnerAgencies,
+  budgetCategories, expenses, budgetForecasts,
   type User, type InsertUser, type Project, type InsertProject,
   type ProjectMember, type InsertProjectMember, type Phase, type InsertPhase,
   type Task, type InsertTask, type ChecklistItem, type InsertChecklistItem,
@@ -14,7 +15,10 @@ import {
   type OrganizationMember, type InsertOrganizationMember,
   type PaymentIntegration, type InsertPaymentIntegration,
   type AdminSetting, type InsertAdminSetting,
-  type PartnerAgency, type InsertPartnerAgency
+  type PartnerAgency, type InsertPartnerAgency,
+  type BudgetCategory, type InsertBudgetCategory,
+  type Expense, type InsertExpense,
+  type BudgetForecast, type InsertBudgetForecast
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, inArray } from "drizzle-orm";

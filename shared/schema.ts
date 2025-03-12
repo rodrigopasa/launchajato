@@ -8,6 +8,8 @@ export const orgRoleEnum = pgEnum('org_role', ['owner', 'admin', 'member']); // 
 export const projectStatusEnum = pgEnum('project_status', ['planning', 'in_progress', 'testing', 'completed', 'on_hold']);
 export const taskPriorityEnum = pgEnum('task_priority', ['low', 'medium', 'high']);
 export const taskStatusEnum = pgEnum('task_status', ['todo', 'in_progress', 'review', 'completed']);
+export const budgetCategoryEnum = pgEnum('budget_category', ['marketing', 'development', 'design', 'operations', 'legal', 'hr', 'infrastructure', 'other']);
+export const expenseStatusEnum = pgEnum('expense_status', ['planned', 'approved', 'rejected', 'paid', 'cancelled']);
 export const professionEnum = pgEnum('profession', ['developer', 'designer', 'social_media', 'marketing', 'content_writer', 'project_manager', 'qa_tester', 'devops', 'product_owner', 'data_analyst', 'ui_ux', 'business_analyst', 'other']);
 export const integrationTypeEnum = pgEnum('integration_type', ['whatsapp', 'whatsapp_web', 'email', 'sms', 'other']);
 export const subscriptionPlanEnum = pgEnum('subscription_plan', ['free', 'starter', 'professional', 'enterprise', 'custom', 'partner_trial']);
@@ -299,6 +301,64 @@ export const adminSettings = pgTable("admin_settings", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Budget Categories - para categorização detalhada de orçamentos
+export const budgetCategories = pgTable("budget_categories", {
+  id: serial("id").primaryKey(),
+  organizationId: integer("organization_id").notNull().references(() => organizations.id, { onDelete: 'cascade' }),
+  projectId: integer("project_id").notNull().references(() => projects.id, { onDelete: 'cascade' }),
+  name: text("name").notNull(),
+  category: budgetCategoryEnum("category").notNull().default('other'),
+  description: text("description"),
+  plannedAmount: integer("planned_amount").notNull().default(0), // Valor em centavos
+  actualAmount: integer("actual_amount").notNull().default(0), // Valor em centavos
+  createdBy: integer("created_by").notNull().references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => {
+  return {
+    uniqueCategoryInProject: unique("unique_budget_category").on(table.projectId, table.name),
+  }
+});
+
+// Expenses - para rastreamento detalhado de despesas
+export const expenses = pgTable("expenses", {
+  id: serial("id").primaryKey(),
+  organizationId: integer("organization_id").notNull().references(() => organizations.id, { onDelete: 'cascade' }),
+  projectId: integer("project_id").notNull().references(() => projects.id, { onDelete: 'cascade' }),
+  categoryId: integer("category_id").references(() => budgetCategories.id),
+  name: text("name").notNull(),
+  description: text("description"),
+  amount: integer("amount").notNull(), // Valor em centavos
+  date: timestamp("date").notNull(),
+  status: expenseStatusEnum("status").notNull().default('planned'),
+  receiptUrl: text("receipt_url"),
+  vendorName: text("vendor_name"),
+  createdBy: integer("created_by").notNull().references(() => users.id),
+  approvedBy: integer("approved_by").references(() => users.id),
+  approvedAt: timestamp("approved_at"),
+  taskId: integer("task_id").references(() => tasks.id, { onDelete: 'set null' }),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  metadata: jsonb("metadata"),
+});
+
+// Project Budget Forecasts - para previsões e análises de orçamento
+export const budgetForecasts = pgTable("budget_forecasts", {
+  id: serial("id").primaryKey(),
+  organizationId: integer("organization_id").notNull().references(() => organizations.id, { onDelete: 'cascade' }),
+  projectId: integer("project_id").notNull().references(() => projects.id, { onDelete: 'cascade' }),
+  name: text("name").notNull(),
+  description: text("description"),
+  startDate: timestamp("start_date").notNull(),
+  endDate: timestamp("end_date").notNull(),
+  forecastAmount: integer("forecast_amount").notNull(), // Valor em centavos
+  actualAmount: integer("actual_amount").default(0), // Valor em centavos
+  variance: integer("variance").default(0), // Diferença entre previsto e realizado
+  createdBy: integer("created_by").notNull().references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Partner Agencies - para liberar acesso temporário
 export const partnerAgencies = pgTable("partner_agencies", {
   id: serial("id").primaryKey(),
@@ -506,6 +566,44 @@ export const insertAdminSettingSchema = createInsertSchema(adminSettings).pick({
   updatedBy: true,
 });
 
+export const insertBudgetCategorySchema = createInsertSchema(budgetCategories).pick({
+  organizationId: true,
+  projectId: true,
+  name: true,
+  category: true,
+  description: true,
+  plannedAmount: true,
+  actualAmount: true,
+  createdBy: true,
+});
+
+export const insertExpenseSchema = createInsertSchema(expenses).pick({
+  organizationId: true,
+  projectId: true,
+  categoryId: true,
+  name: true,
+  description: true,
+  amount: true,
+  date: true,
+  status: true,
+  receiptUrl: true,
+  vendorName: true,
+  createdBy: true,
+  taskId: true,
+  metadata: true,
+});
+
+export const insertBudgetForecastSchema = createInsertSchema(budgetForecasts).pick({
+  organizationId: true,
+  projectId: true,
+  name: true,
+  description: true,
+  startDate: true,
+  endDate: true,
+  forecastAmount: true,
+  createdBy: true,
+});
+
 export const insertPartnerAgencySchema = createInsertSchema(partnerAgencies).pick({
   name: true,
   contactName: true,
@@ -569,6 +667,16 @@ export type PaymentIntegration = typeof paymentIntegrations.$inferSelect;
 
 export type InsertAdminSetting = z.infer<typeof insertAdminSettingSchema>;
 export type AdminSetting = typeof adminSettings.$inferSelect;
+
+// Tipos para orçamento e despesas
+export type InsertBudgetCategory = z.infer<typeof insertBudgetCategorySchema>;
+export type BudgetCategory = typeof budgetCategories.$inferSelect;
+
+export type InsertExpense = z.infer<typeof insertExpenseSchema>;
+export type Expense = typeof expenses.$inferSelect;
+
+export type InsertBudgetForecast = z.infer<typeof insertBudgetForecastSchema>;
+export type BudgetForecast = typeof budgetForecasts.$inferSelect;
 
 export type InsertPartnerAgency = z.infer<typeof insertPartnerAgencySchema>;
 export type PartnerAgency = typeof partnerAgencies.$inferSelect;
