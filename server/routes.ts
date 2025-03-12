@@ -181,30 +181,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/users", async (req: Request, res: Response) => {
     try {
-      // Verificar se é o primeiro usuário do sistema (permitir criação do superadmin)
+      // Verificar se é o primeiro usuário do sistema
       const allUsers = await storage.getAllUsers();
       const isFirstUser = allUsers.length === 0;
       
-      // Se não for o primeiro usuário e estiver tentando criar um admin sem ser admin
-      if (!isFirstUser && 
-          req.body.role === 'admin' && 
-          (!req.session || !req.session.userId)) {
-        console.log("Tentativa de criar usuário admin sem permissão");
-        return res.status(403).json({ message: "Permissão negada" });
+      console.log("Criando usuário. É o primeiro? ", isFirstUser);
+      
+      // Se for o primeiro usuário, não precisa de verificação de permissão
+      // Caso contrário, verifica permissões
+      if (!isFirstUser && req.body.role === 'admin') {
+        // Só permitir criar admin se o usuário estiver autenticado como admin
+        if (!req.user || req.user.role !== 'admin') {
+          console.log("Tentativa de criar usuário admin sem permissão");
+          return res.status(403).json({ message: "Permissão negada" });
+        }
       }
       
-      // Permitir criação do primeiro usuário como admin com nome específico
+      // Validar dados de entrada
       const validatedData = insertUserSchema.parse(req.body);
       
-      // Se for o primeiro usuário, garantir que username='admin' para acesso SuperAdmin
+      // Se for o primeiro usuário, forçar como admin
       if (isFirstUser) {
-        if (validatedData.username !== 'admin') {
-          return res.status(400).json({ 
-            message: "O primeiro usuário deve ter o nome de usuário 'admin'"
-          });
-        }
         validatedData.role = 'admin';
-        console.log("Criando usuário SuperAdmin inicial");
+        console.log("Criando usuário SuperAdmin inicial:", validatedData.username);
       }
       
       // Check if username or email already exists

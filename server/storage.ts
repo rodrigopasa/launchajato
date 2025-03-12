@@ -250,7 +250,9 @@ export class MemStorage implements IStorage {
     this.expenseIdCounter = 1;
     this.budgetForecastIdCounter = 1;
     
-    // Add default admin user
+    // Não criar usuário admin padrão para permitir a criação manual
+    // através da interface
+    /* 
     this.createUser({
       username: "admin",
       password: "admin123",
@@ -259,6 +261,7 @@ export class MemStorage implements IStorage {
       role: "admin",
       avatar: ""
     });
+    */
   }
   
   // Organization methods
