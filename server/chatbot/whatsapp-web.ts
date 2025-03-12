@@ -1,11 +1,32 @@
-// Importação em modo ESM
-import * as WAWebJS from 'whatsapp-web.js';
-import qrcode from 'qrcode-terminal';
+// Importação em modo ESM com tratamento para ambiente sem as dependências necessárias
 import { storage } from '../storage';
 import { log } from '../vite';
 
+// Importações com tratamento de erro
+let WAWebJS: any = null;
+let qrcode: any = null;
+
+try {
+  // Usando dynamic import para compatibilidade com ESM
+  import('whatsapp-web.js').then(module => {
+    WAWebJS = module;
+    log('WhatsApp Web carregado com sucesso', 'whatsapp-web');
+  }).catch(error => {
+    log(`Erro ao carregar WhatsApp Web: ${error}`, 'whatsapp-web');
+  });
+  
+  import('qrcode-terminal').then(module => {
+    qrcode = module.default;
+    log('QR Code Terminal carregado com sucesso', 'whatsapp-web');
+  }).catch(error => {
+    log(`Erro ao carregar QR Code Terminal: ${error}`, 'whatsapp-web');
+  });
+} catch (error) {
+  log(`Não foi possível carregar dependências do WhatsApp Web: ${error}`, 'whatsapp-web');
+}
+
 // Estado do cliente
-let client: WAWebJS.Client | null = null;
+let client: any = null;
 let isClientReady = false;
 let lastQRCode = '';
 
@@ -16,6 +37,12 @@ let messageHandlers: MessageHandler[] = [];
 // Iniciar o cliente WhatsApp Web
 export async function initWhatsAppWebClient(): Promise<void> {
   try {
+    // Verificar se as dependências foram carregadas corretamente
+    if (!WAWebJS || !qrcode) {
+      log('Dependências do WhatsApp Web não estão disponíveis. A funcionalidade será desativada.', 'whatsapp-web');
+      return;
+    }
+    
     // Verificar se já existe uma integração WhatsApp Web configurada e ativa
     const integration = await storage.getIntegrationByType('whatsapp_web');
     
@@ -25,7 +52,7 @@ export async function initWhatsAppWebClient(): Promise<void> {
     }
     
     // Configurar cliente com opções básicas
-    client = new WAWebJS.Client({
+    client = new WAWebJS.default.Client({
       puppeteer: {
         headless: true,
         args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-gpu']
@@ -33,7 +60,7 @@ export async function initWhatsAppWebClient(): Promise<void> {
     });
 
     // Evento quando QR code é recebido
-    client.on('qr', (qr) => {
+    client.on('qr', (qr: any) => {
       lastQRCode = qr;
       log('QR Code recebido, gerando para terminal', 'whatsapp-web');
       qrcode.generate(qr, { small: true });
@@ -51,7 +78,7 @@ export async function initWhatsAppWebClient(): Promise<void> {
     });
 
     // Lidar com mensagens recebidas
-    client.on('message', async (msg) => {
+    client.on('message', async (msg: any) => {
       if (msg.from === 'status@broadcast') return;
       
       const from = msg.from;
