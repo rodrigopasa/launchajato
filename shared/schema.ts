@@ -243,6 +243,46 @@ export const paymentIntegrations = pgTable("payment_integrations", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Stripe Products table
+export const stripeProducts = pgTable("stripe_products", {
+  id: serial("id").primaryKey(),
+  stripeId: text("stripe_id").notNull().unique(),
+  name: text("name").notNull(),
+  description: text("description"),
+  active: boolean("active").notNull().default(true),
+  metadata: jsonb("metadata"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Stripe Prices table
+export const stripePrices = pgTable("stripe_prices", {
+  id: serial("id").primaryKey(),
+  stripeId: text("stripe_id").notNull().unique(),
+  productId: integer("product_id").notNull().references(() => stripeProducts.id, { onDelete: 'cascade' }),
+  type: text("type").notNull().default('recurring'), // 'recurring' or 'one_time'
+  recurring: jsonb("recurring"), // interval, interval_count, etc.
+  unitAmount: integer("unit_amount").notNull(), // amount in cents
+  currency: text("currency").notNull().default('usd'),
+  active: boolean("active").notNull().default(true),
+  metadata: jsonb("metadata"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Stripe Customers table
+export const stripeCustomers = pgTable("stripe_customers", {
+  id: serial("id").primaryKey(),
+  organizationId: integer("organization_id").notNull().references(() => organizations.id, { onDelete: 'cascade' }),
+  stripeId: text("stripe_id").notNull().unique(),
+  email: text("email").notNull(),
+  name: text("name"),
+  phone: text("phone"),
+  metadata: jsonb("metadata"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Super Admin Settings
 export const adminSettings = pgTable("admin_settings", {
   id: serial("id").primaryKey(),
@@ -425,6 +465,34 @@ export const insertPaymentIntegrationSchema = createInsertSchema(paymentIntegrat
   testMode: true,
 });
 
+export const insertStripeProductSchema = createInsertSchema(stripeProducts).pick({
+  stripeId: true,
+  name: true,
+  description: true,
+  active: true,
+  metadata: true,
+});
+
+export const insertStripePriceSchema = createInsertSchema(stripePrices).pick({
+  stripeId: true,
+  productId: true,
+  type: true,
+  recurring: true,
+  unitAmount: true,
+  currency: true,
+  active: true,
+  metadata: true,
+});
+
+export const insertStripeCustomerSchema = createInsertSchema(stripeCustomers).pick({
+  organizationId: true,
+  stripeId: true,
+  email: true,
+  name: true,
+  phone: true,
+  metadata: true,
+});
+
 export const insertAdminSettingSchema = createInsertSchema(adminSettings).pick({
   settingKey: true,
   settingValue: true,
@@ -499,3 +567,13 @@ export type AdminSetting = typeof adminSettings.$inferSelect;
 
 export type InsertPartnerAgency = z.infer<typeof insertPartnerAgencySchema>;
 export type PartnerAgency = typeof partnerAgencies.$inferSelect;
+
+// Tipos para Stripe
+export type InsertStripeProduct = z.infer<typeof insertStripeProductSchema>;
+export type StripeProduct = typeof stripeProducts.$inferSelect;
+
+export type InsertStripePrice = z.infer<typeof insertStripePriceSchema>;
+export type StripePrice = typeof stripePrices.$inferSelect;
+
+export type InsertStripeCustomer = z.infer<typeof insertStripeCustomerSchema>;
+export type StripeCustomer = typeof stripeCustomers.$inferSelect;
