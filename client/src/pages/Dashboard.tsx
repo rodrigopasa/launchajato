@@ -63,7 +63,7 @@ export default function Dashboard() {
   // Create project mutation
   const createProjectMutation = useMutation({
     mutationFn: async (data: ProjectFormValues) => {
-      return apiRequest<any>("/api/projects", "POST", data);
+      return apiRequest<any>("POST", "/api/projects", data);
     },
     onSuccess: () => {
       setIsNewProjectDialogOpen(false);
@@ -85,7 +85,7 @@ export default function Dashboard() {
   // Update task status mutation
   const updateTaskMutation = useMutation({
     mutationFn: async ({ id, data }: { id: number; data: { status: string } }) => {
-      return apiRequest<any>(`/api/tasks/${id}`, "PUT", data);
+      return apiRequest<any>("PUT", `/api/tasks/${id}`, data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/tasks/user/me"] });
