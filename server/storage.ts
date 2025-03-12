@@ -136,6 +136,44 @@ export interface IStorage {
   createPartnerAgency(agency: InsertPartnerAgency): Promise<PartnerAgency>;
   updatePartnerAgency(id: number, data: Partial<InsertPartnerAgency>): Promise<PartnerAgency | undefined>;
   deletePartnerAgency(id: number): Promise<boolean>;
+
+  // Budget Categories
+  getBudgetCategory(id: number): Promise<BudgetCategory | undefined>;
+  getBudgetCategoriesByProject(projectId: number): Promise<BudgetCategory[]>;
+  createBudgetCategory(category: InsertBudgetCategory): Promise<BudgetCategory>;
+  updateBudgetCategory(id: number, data: Partial<InsertBudgetCategory>): Promise<BudgetCategory | undefined>;
+  deleteBudgetCategory(id: number): Promise<boolean>;
+  
+  // Expenses
+  getExpense(id: number): Promise<Expense | undefined>;
+  getExpensesByProject(projectId: number): Promise<Expense[]>;
+  getExpensesByCategory(categoryId: number): Promise<Expense[]>;
+  createExpense(expense: InsertExpense): Promise<Expense>;
+  updateExpense(id: number, data: Partial<InsertExpense>): Promise<Expense | undefined>;
+  deleteExpense(id: number): Promise<boolean>;
+  approveExpense(id: number, userId: number): Promise<Expense | undefined>;
+  
+  // Budget Forecasts
+  getBudgetForecast(id: number): Promise<BudgetForecast | undefined>;
+  getBudgetForecastsByProject(projectId: number): Promise<BudgetForecast[]>;
+  createBudgetForecast(forecast: InsertBudgetForecast): Promise<BudgetForecast>;
+  updateBudgetForecast(id: number, data: Partial<InsertBudgetForecast>): Promise<BudgetForecast | undefined>;
+  deleteBudgetForecast(id: number): Promise<boolean>;
+  
+  // Budget Analysis
+  getProjectBudgetSummary(projectId: number): Promise<{
+    totalBudget: number;
+    plannedAmount: number;
+    actualAmount: number;
+    remainingBudget: number;
+    categorySummary: {
+      categoryId: number;
+      name: string;
+      plannedAmount: number;
+      actualAmount: number;
+      variance: number;
+    }[];
+  }>;
 }
 
 export class MemStorage implements IStorage {
@@ -153,6 +191,9 @@ export class MemStorage implements IStorage {
   private activities: Map<number, Activity>;
   private comments: Map<number, Comment>;
   private integrations: Map<number, Integration>;
+  private budgetCategories: Map<number, BudgetCategory>;
+  private expenses: Map<number, Expense>;
+  private budgetForecasts: Map<number, BudgetForecast>;
   
   private organizationIdCounter: number;
   private organizationSettingsIdCounter: number;
@@ -168,6 +209,9 @@ export class MemStorage implements IStorage {
   private activityIdCounter: number;
   private commentIdCounter: number;
   private integrationIdCounter: number;
+  private budgetCategoryIdCounter: number;
+  private expenseIdCounter: number;
+  private budgetForecastIdCounter: number;
 
   constructor() {
     this.organizations = new Map();
@@ -184,6 +228,9 @@ export class MemStorage implements IStorage {
     this.activities = new Map();
     this.comments = new Map();
     this.integrations = new Map();
+    this.budgetCategories = new Map();
+    this.expenses = new Map();
+    this.budgetForecasts = new Map();
     
     this.organizationIdCounter = 1;
     this.organizationSettingsIdCounter = 1;
@@ -199,6 +246,9 @@ export class MemStorage implements IStorage {
     this.activityIdCounter = 1;
     this.commentIdCounter = 1;
     this.integrationIdCounter = 1;
+    this.budgetCategoryIdCounter = 1;
+    this.expenseIdCounter = 1;
+    this.budgetForecastIdCounter = 1;
     
     // Add default admin user
     this.createUser({
@@ -838,6 +888,210 @@ export class MemStorage implements IStorage {
 
   async deletePartnerAgency(id: number): Promise<boolean> {
     return this.partnerAgencies.delete(id);
+  }
+  
+  // Budget Categories methods
+  async getBudgetCategory(id: number): Promise<BudgetCategory | undefined> {
+    return this.budgetCategories.get(id);
+  }
+  
+  async getBudgetCategoriesByProject(projectId: number): Promise<BudgetCategory[]> {
+    return Array.from(this.budgetCategories.values())
+      .filter(category => category.projectId === projectId)
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }
+  
+  async createBudgetCategory(insertCategory: InsertBudgetCategory): Promise<BudgetCategory> {
+    const now = new Date();
+    const id = this.budgetCategoryIdCounter++;
+    const category: BudgetCategory = { 
+      ...insertCategory, 
+      id, 
+      createdAt: now,
+      updatedAt: now
+    };
+    this.budgetCategories.set(id, category);
+    return category;
+  }
+  
+  async updateBudgetCategory(id: number, data: Partial<InsertBudgetCategory>): Promise<BudgetCategory | undefined> {
+    const category = this.budgetCategories.get(id);
+    if (!category) return undefined;
+    
+    const updatedCategory = { 
+      ...category, 
+      ...data, 
+      updatedAt: new Date() 
+    };
+    this.budgetCategories.set(id, updatedCategory);
+    return updatedCategory;
+  }
+  
+  async deleteBudgetCategory(id: number): Promise<boolean> {
+    return this.budgetCategories.delete(id);
+  }
+  
+  // Expenses methods
+  async getExpense(id: number): Promise<Expense | undefined> {
+    return this.expenses.get(id);
+  }
+  
+  async getExpensesByProject(projectId: number): Promise<Expense[]> {
+    return Array.from(this.expenses.values())
+      .filter(expense => expense.projectId === projectId)
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  }
+  
+  async getExpensesByCategory(categoryId: number): Promise<Expense[]> {
+    return Array.from(this.expenses.values())
+      .filter(expense => expense.categoryId === categoryId)
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  }
+  
+  async createExpense(insertExpense: InsertExpense): Promise<Expense> {
+    const now = new Date();
+    const id = this.expenseIdCounter++;
+    const expense: Expense = { 
+      ...insertExpense, 
+      id, 
+      createdAt: now,
+      updatedAt: now,
+      status: insertExpense.status || "planned"
+    };
+    this.expenses.set(id, expense);
+    return expense;
+  }
+  
+  async updateExpense(id: number, data: Partial<InsertExpense>): Promise<Expense | undefined> {
+    const expense = this.expenses.get(id);
+    if (!expense) return undefined;
+    
+    const updatedExpense = { 
+      ...expense, 
+      ...data, 
+      updatedAt: new Date() 
+    };
+    this.expenses.set(id, updatedExpense);
+    return updatedExpense;
+  }
+  
+  async deleteExpense(id: number): Promise<boolean> {
+    return this.expenses.delete(id);
+  }
+  
+  async approveExpense(id: number, userId: number): Promise<Expense | undefined> {
+    const expense = this.expenses.get(id);
+    if (!expense) return undefined;
+    
+    const updatedExpense = { 
+      ...expense, 
+      status: "approved", 
+      approvedBy: userId,
+      approvedAt: new Date(),
+      updatedAt: new Date() 
+    };
+    this.expenses.set(id, updatedExpense);
+    return updatedExpense;
+  }
+  
+  // Budget Forecasts methods
+  async getBudgetForecast(id: number): Promise<BudgetForecast | undefined> {
+    return this.budgetForecasts.get(id);
+  }
+  
+  async getBudgetForecastsByProject(projectId: number): Promise<BudgetForecast[]> {
+    return Array.from(this.budgetForecasts.values())
+      .filter(forecast => forecast.projectId === projectId)
+      .sort((a, b) => a.period.localeCompare(b.period));
+  }
+  
+  async createBudgetForecast(insertForecast: InsertBudgetForecast): Promise<BudgetForecast> {
+    const now = new Date();
+    const id = this.budgetForecastIdCounter++;
+    const forecast: BudgetForecast = { 
+      ...insertForecast, 
+      id, 
+      createdAt: now,
+      updatedAt: now
+    };
+    this.budgetForecasts.set(id, forecast);
+    return forecast;
+  }
+  
+  async updateBudgetForecast(id: number, data: Partial<InsertBudgetForecast>): Promise<BudgetForecast | undefined> {
+    const forecast = this.budgetForecasts.get(id);
+    if (!forecast) return undefined;
+    
+    const updatedForecast = { 
+      ...forecast, 
+      ...data, 
+      updatedAt: new Date() 
+    };
+    this.budgetForecasts.set(id, updatedForecast);
+    return updatedForecast;
+  }
+  
+  async deleteBudgetForecast(id: number): Promise<boolean> {
+    return this.budgetForecasts.delete(id);
+  }
+  
+  // Budget Analysis
+  async getProjectBudgetSummary(projectId: number): Promise<{
+    totalBudget: number;
+    plannedAmount: number;
+    actualAmount: number;
+    remainingBudget: number;
+    categorySummary: {
+      categoryId: number;
+      name: string;
+      plannedAmount: number;
+      actualAmount: number;
+      variance: number;
+    }[];
+  }> {
+    const project = await this.getProject(projectId);
+    if (!project) {
+      throw new Error("Project not found");
+    }
+    
+    const totalBudget = project.budget || 0;
+    
+    const expenses = await this.getExpensesByProject(projectId);
+    const categories = await this.getBudgetCategoriesByProject(projectId);
+    
+    // Calculate planned and actual expenses
+    const plannedExpenses = expenses.filter(e => e.status === "planned" || e.status === "approved");
+    const paidExpenses = expenses.filter(e => e.status === "paid");
+    
+    const plannedAmount = plannedExpenses.reduce((sum, e) => sum + (e.amount || 0), 0);
+    const actualAmount = paidExpenses.reduce((sum, e) => sum + (e.amount || 0), 0);
+    const remainingBudget = totalBudget - actualAmount;
+    
+    // Calculate expenses by category
+    const categorySummary = categories.map(category => {
+      const categoryPlannedExpenses = plannedExpenses.filter(e => e.categoryId === category.id);
+      const categoryPaidExpenses = paidExpenses.filter(e => e.categoryId === category.id);
+      
+      const plannedAmount = categoryPlannedExpenses.reduce((sum, e) => sum + (e.amount || 0), 0);
+      const actualAmount = categoryPaidExpenses.reduce((sum, e) => sum + (e.amount || 0), 0);
+      const variance = plannedAmount - actualAmount;
+      
+      return {
+        categoryId: category.id,
+        name: category.name,
+        plannedAmount,
+        actualAmount,
+        variance
+      };
+    });
+    
+    return {
+      totalBudget,
+      plannedAmount,
+      actualAmount,
+      remainingBudget,
+      categorySummary
+    };
   }
 }
 
