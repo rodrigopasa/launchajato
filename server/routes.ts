@@ -1,5 +1,15 @@
-import type { Express, Request, Response } from "express";
+import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
+import { User } from "@shared/schema";
+
+// Estender a definição Request para incluir o objeto user
+declare global {
+  namespace Express {
+    interface Request {
+      user?: User;
+    }
+  }
+}
 import Stripe from "stripe";
 
 if (!process.env.STRIPE_SECRET_KEY) {
@@ -25,6 +35,9 @@ import {
   insertPhaseSchema, 
   insertChecklistItemSchema,
   insertIntegrationSchema,
+  insertBudgetCategorySchema,
+  insertExpenseSchema,
+  insertBudgetForecastSchema,
   integrations
 } from "@shared/schema";
 import chatbotRoutes from "./chatbot/routes";
@@ -2076,6 +2089,655 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (err: any) {
       console.error("Error processing webhook:", err);
       res.status(500).send(`Webhook Error: ${err.message}`);
+    }
+  });
+
+  // ==== ROTAS DE GERENCIAMENTO DE ORÇAMENTO ====
+
+  // Obter categorias de orçamento de um projeto
+  app.get("/api/projects/:projectId/budget-categories", isProjectMember, async (req: Request, res: Response) => {
+    try {
+      const { projectId } = req.params;
+      const categories = await storage.getBudgetCategoriesByProject(Number(projectId));
+      res.json(categories);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Obter uma categoria de orçamento específica
+  app.get("/api/budget-categories/:id", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      const category = await storage.getBudgetCategory(Number(id));
+      if (!category) {
+        return res.status(404).json({ message: "Categoria de orçamento não encontrada" });
+      }
+      
+      // Verificar se o usuário tem acesso ao projeto desta categoria
+      const project = await storage.getProject(category.projectId);
+      if (!project) {
+        return res.status(404).json({ message: "Projeto não encontrado" });
+      }
+      
+      const projectMembers = await storage.getProjectMembers(project.id);
+      const isMember = projectMembers.some(member => member.userId === req.user!.id);
+      
+      if (!isMember && req.user!.role !== "admin") {
+        return res.status(403).json({ message: "Acesso negado a esta categoria de orçamento" });
+      }
+      
+      res.json(category);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Criar uma nova categoria de orçamento
+  app.post("/api/projects/:projectId/budget-categories", isProjectMember, hasProjectRole(['admin', 'manager']), async (req: Request, res: Response) => {
+    try {
+      const { projectId } = req.params;
+      const projectIdNum = Number(projectId);
+      
+      // Validar dados com o schema
+      const categoryData = insertBudgetCategorySchema.parse({
+        ...req.body,
+        projectId: projectIdNum
+      });
+      
+      const newCategory = await storage.createBudgetCategory(categoryData);
+      
+      // Registrar atividade
+      await storage.createActivity({
+        userId: req.user!.id,
+        action: "create",
+        subject: "budget_category",
+        projectId: projectIdNum,
+        details: `Criou categoria de orçamento: ${newCategory.name}`
+      });
+      
+      res.status(201).json(newCategory);
+    } catch (error: any) {
+      if (error.name === "ZodError") {
+        return res.status(400).json({ message: "Dados inválidos", errors: error.format() });
+      }
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Atualizar uma categoria de orçamento
+  app.put("/api/budget-categories/:id", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      const categoryId = Number(id);
+      
+      // Verificar se a categoria existe
+      const category = await storage.getBudgetCategory(categoryId);
+      if (!category) {
+        return res.status(404).json({ message: "Categoria de orçamento não encontrada" });
+      }
+      
+      // Verificar permissões no projeto
+      const projectMembers = await storage.getProjectMembers(category.projectId);
+      const userMember = projectMembers.find(member => member.userId === req.user!.id);
+      
+      if (!userMember && req.user!.role !== "admin") {
+        return res.status(403).json({ message: "Acesso negado a esta categoria de orçamento" });
+      }
+      
+      if (userMember && !["admin", "manager"].includes(userMember.role) && req.user!.role !== "admin") {
+        return res.status(403).json({ message: "Você não tem permissão para editar categorias de orçamento" });
+      }
+      
+      // Validar dados com o schema
+      const categoryData = insertBudgetCategorySchema.partial().parse(req.body);
+      
+      // Atualizar categoria
+      const updatedCategory = await storage.updateBudgetCategory(categoryId, categoryData);
+      
+      // Registrar atividade
+      await storage.createActivity({
+        userId: req.user!.id,
+        action: "update",
+        subject: "budget_category",
+        projectId: category.projectId,
+        details: `Atualizou categoria de orçamento: ${category.name}`
+      });
+      
+      res.json(updatedCategory);
+    } catch (error: any) {
+      if (error.name === "ZodError") {
+        return res.status(400).json({ message: "Dados inválidos", errors: error.format() });
+      }
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Excluir uma categoria de orçamento
+  app.delete("/api/budget-categories/:id", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      const categoryId = Number(id);
+      
+      // Verificar se a categoria existe
+      const category = await storage.getBudgetCategory(categoryId);
+      if (!category) {
+        return res.status(404).json({ message: "Categoria de orçamento não encontrada" });
+      }
+      
+      // Verificar permissões no projeto
+      const projectMembers = await storage.getProjectMembers(category.projectId);
+      const userMember = projectMembers.find(member => member.userId === req.user!.id);
+      
+      if (!userMember && req.user!.role !== "admin") {
+        return res.status(403).json({ message: "Acesso negado a esta categoria de orçamento" });
+      }
+      
+      if (userMember && !["admin"].includes(userMember.role) && req.user!.role !== "admin") {
+        return res.status(403).json({ message: "Você não tem permissão para excluir categorias de orçamento" });
+      }
+      
+      // Verificar se existem despesas associadas
+      const expenses = await storage.getExpensesByCategory(categoryId);
+      if (expenses.length > 0) {
+        return res.status(400).json({ 
+          message: "Não é possível excluir esta categoria pois existem despesas associadas a ela" 
+        });
+      }
+      
+      // Excluir categoria
+      await storage.deleteBudgetCategory(categoryId);
+      
+      // Registrar atividade
+      await storage.createActivity({
+        userId: req.user!.id,
+        action: "delete",
+        subject: "budget_category",
+        projectId: category.projectId,
+        details: `Excluiu categoria de orçamento: ${category.name}`
+      });
+      
+      res.status(204).send();
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // === ROTAS DE DESPESAS ===
+
+  // Obter despesas de um projeto
+  app.get("/api/projects/:projectId/expenses", isProjectMember, async (req: Request, res: Response) => {
+    try {
+      const { projectId } = req.params;
+      const { status, categoryId } = req.query;
+      
+      let expenses = await storage.getExpensesByProject(Number(projectId));
+      
+      // Filtrar por status se fornecido
+      if (status) {
+        expenses = expenses.filter(e => e.status === status);
+      }
+      
+      // Filtrar por categoria se fornecida
+      if (categoryId) {
+        expenses = expenses.filter(e => e.categoryId === Number(categoryId));
+      }
+      
+      res.json(expenses);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Obter uma despesa específica
+  app.get("/api/expenses/:id", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      const expense = await storage.getExpense(Number(id));
+      
+      if (!expense) {
+        return res.status(404).json({ message: "Despesa não encontrada" });
+      }
+      
+      // Verificar se o usuário tem acesso ao projeto desta despesa
+      const projectMembers = await storage.getProjectMembers(expense.projectId);
+      const isMember = projectMembers.some(member => member.userId === req.user!.id);
+      
+      if (!isMember && req.user!.role !== "admin") {
+        return res.status(403).json({ message: "Acesso negado a esta despesa" });
+      }
+      
+      res.json(expense);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Criar uma nova despesa
+  app.post("/api/projects/:projectId/expenses", isProjectMember, async (req: Request, res: Response) => {
+    try {
+      const { projectId } = req.params;
+      const projectIdNum = Number(projectId);
+      
+      // Validar dados com o schema
+      const expenseData = insertExpenseSchema.parse({
+        ...req.body,
+        projectId: projectIdNum,
+        createdBy: req.user!.id
+      });
+      
+      // Verificar se a categoria existe e pertence ao projeto
+      if (expenseData.categoryId) {
+        const category = await storage.getBudgetCategory(expenseData.categoryId);
+        if (!category) {
+          return res.status(404).json({ message: "Categoria de orçamento não encontrada" });
+        }
+        
+        if (category.projectId !== projectIdNum) {
+          return res.status(400).json({ 
+            message: "Esta categoria de orçamento não pertence ao projeto selecionado" 
+          });
+        }
+      }
+      
+      const newExpense = await storage.createExpense(expenseData);
+      
+      // Registrar atividade
+      await storage.createActivity({
+        userId: req.user!.id,
+        action: "create",
+        subject: "expense",
+        projectId: projectIdNum,
+        details: `Criou despesa: ${newExpense.description} (${newExpense.amount})`
+      });
+      
+      res.status(201).json(newExpense);
+    } catch (error: any) {
+      if (error.name === "ZodError") {
+        return res.status(400).json({ message: "Dados inválidos", errors: error.format() });
+      }
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Atualizar uma despesa
+  app.put("/api/expenses/:id", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      const expenseId = Number(id);
+      
+      // Verificar se a despesa existe
+      const expense = await storage.getExpense(expenseId);
+      if (!expense) {
+        return res.status(404).json({ message: "Despesa não encontrada" });
+      }
+      
+      // Verificar permissões no projeto
+      const projectMembers = await storage.getProjectMembers(expense.projectId);
+      const userMember = projectMembers.find(member => member.userId === req.user!.id);
+      
+      if (!userMember && req.user!.role !== "admin") {
+        return res.status(403).json({ message: "Acesso negado a esta despesa" });
+      }
+      
+      // Verificar se o usuário tem permissão para editar despesas
+      // - Criador da despesa pode editar
+      // - Admin/Manager do projeto pode editar qualquer despesa
+      const isCreator = expense.createdBy === req.user!.id;
+      const hasEditAccess = userMember && ["admin", "manager"].includes(userMember.role);
+      
+      if (!isCreator && !hasEditAccess && req.user!.role !== "admin") {
+        return res.status(403).json({ message: "Você não tem permissão para editar esta despesa" });
+      }
+      
+      // Validar dados com o schema
+      const expenseData = insertExpenseSchema.partial().parse(req.body);
+      
+      // Verificar se a categoria existe e pertence ao projeto se estiver sendo atualizada
+      if (expenseData.categoryId) {
+        const category = await storage.getBudgetCategory(expenseData.categoryId);
+        if (!category) {
+          return res.status(404).json({ message: "Categoria de orçamento não encontrada" });
+        }
+        
+        if (category.projectId !== expense.projectId) {
+          return res.status(400).json({ 
+            message: "Esta categoria de orçamento não pertence ao projeto selecionado" 
+          });
+        }
+      }
+      
+      // Atualizar despesa
+      const updatedExpense = await storage.updateExpense(expenseId, expenseData);
+      
+      // Registrar atividade
+      await storage.createActivity({
+        userId: req.user!.id,
+        action: "update",
+        subject: "expense",
+        projectId: expense.projectId,
+        details: `Atualizou despesa: ${expense.description}`
+      });
+      
+      res.json(updatedExpense);
+    } catch (error: any) {
+      if (error.name === "ZodError") {
+        return res.status(400).json({ message: "Dados inválidos", errors: error.format() });
+      }
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Aprovar uma despesa
+  app.post("/api/expenses/:id/approve", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      const expenseId = Number(id);
+      
+      // Verificar se a despesa existe
+      const expense = await storage.getExpense(expenseId);
+      if (!expense) {
+        return res.status(404).json({ message: "Despesa não encontrada" });
+      }
+      
+      // Verificar se a despesa já está aprovada
+      if (expense.status === "approved" || expense.status === "paid") {
+        return res.status(400).json({ 
+          message: `A despesa já está com status ${expense.status}` 
+        });
+      }
+      
+      // Verificar permissões no projeto
+      const projectMembers = await storage.getProjectMembers(expense.projectId);
+      const userMember = projectMembers.find(member => member.userId === req.user!.id);
+      
+      // Somente admin/manager do projeto ou admin do sistema podem aprovar despesas
+      if ((!userMember || !["admin", "manager"].includes(userMember.role)) && req.user!.role !== "admin") {
+        return res.status(403).json({ 
+          message: "Você não tem permissão para aprovar despesas neste projeto" 
+        });
+      }
+      
+      // Aprovar despesa
+      const approvedExpense = await storage.approveExpense(expenseId, req.user!.id);
+      
+      // Registrar atividade
+      await storage.createActivity({
+        userId: req.user!.id,
+        action: "approve",
+        subject: "expense",
+        projectId: expense.projectId,
+        details: `Aprovou despesa: ${expense.description} (${expense.amount})`
+      });
+      
+      res.json(approvedExpense);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Excluir uma despesa
+  app.delete("/api/expenses/:id", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      const expenseId = Number(id);
+      
+      // Verificar se a despesa existe
+      const expense = await storage.getExpense(expenseId);
+      if (!expense) {
+        return res.status(404).json({ message: "Despesa não encontrada" });
+      }
+      
+      // Verificar permissões no projeto
+      const projectMembers = await storage.getProjectMembers(expense.projectId);
+      const userMember = projectMembers.find(member => member.userId === req.user!.id);
+      
+      if (!userMember && req.user!.role !== "admin") {
+        return res.status(403).json({ message: "Acesso negado a esta despesa" });
+      }
+      
+      // Verificar se o usuário tem permissão para excluir despesas
+      // - Criador da despesa pode excluir se ainda estiver com status "planned"
+      // - Admin do projeto pode excluir qualquer despesa que não esteja "paid"
+      const isCreator = expense.createdBy === req.user!.id;
+      const isAdmin = userMember && userMember.role === "admin";
+      
+      if (expense.status === "paid") {
+        return res.status(400).json({ 
+          message: "Não é possível excluir despesas já pagas" 
+        });
+      }
+      
+      if (!isCreator && !isAdmin && req.user!.role !== "admin") {
+        return res.status(403).json({ 
+          message: "Você não tem permissão para excluir esta despesa" 
+        });
+      }
+      
+      if (isCreator && !isAdmin && expense.status !== "planned" && req.user!.role !== "admin") {
+        return res.status(400).json({ 
+          message: "Você só pode excluir despesas com status 'planned'" 
+        });
+      }
+      
+      // Excluir despesa
+      await storage.deleteExpense(expenseId);
+      
+      // Registrar atividade
+      await storage.createActivity({
+        userId: req.user!.id,
+        action: "delete",
+        subject: "expense",
+        projectId: expense.projectId,
+        details: `Excluiu despesa: ${expense.description} (${expense.amount})`
+      });
+      
+      res.status(204).send();
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // === ROTAS DE PREVISÃO ORÇAMENTÁRIA ===
+
+  // Obter previsões orçamentárias de um projeto
+  app.get("/api/projects/:projectId/budget-forecasts", isProjectMember, async (req: Request, res: Response) => {
+    try {
+      const { projectId } = req.params;
+      const forecasts = await storage.getBudgetForecastsByProject(Number(projectId));
+      res.json(forecasts);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Obter uma previsão orçamentária específica
+  app.get("/api/budget-forecasts/:id", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      const forecast = await storage.getBudgetForecast(Number(id));
+      
+      if (!forecast) {
+        return res.status(404).json({ message: "Previsão orçamentária não encontrada" });
+      }
+      
+      // Verificar se o usuário tem acesso ao projeto desta previsão
+      const projectMembers = await storage.getProjectMembers(forecast.projectId);
+      const isMember = projectMembers.some(member => member.userId === req.user!.id);
+      
+      if (!isMember && req.user!.role !== "admin") {
+        return res.status(403).json({ message: "Acesso negado a esta previsão orçamentária" });
+      }
+      
+      res.json(forecast);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Criar uma nova previsão orçamentária
+  app.post("/api/projects/:projectId/budget-forecasts", isProjectMember, hasProjectRole(['admin', 'manager']), async (req: Request, res: Response) => {
+    try {
+      const { projectId } = req.params;
+      const projectIdNum = Number(projectId);
+      
+      // Validar dados com o schema
+      const forecastData = insertBudgetForecastSchema.parse({
+        ...req.body,
+        projectId: projectIdNum,
+        createdBy: req.user!.id
+      });
+      
+      // Verificar se a categoria existe e pertence ao projeto, se fornecida
+      if (forecastData.categoryId) {
+        const category = await storage.getBudgetCategory(forecastData.categoryId);
+        if (!category) {
+          return res.status(404).json({ message: "Categoria de orçamento não encontrada" });
+        }
+        
+        if (category.projectId !== projectIdNum) {
+          return res.status(400).json({ 
+            message: "Esta categoria de orçamento não pertence ao projeto selecionado" 
+          });
+        }
+      }
+      
+      const newForecast = await storage.createBudgetForecast(forecastData);
+      
+      // Registrar atividade
+      await storage.createActivity({
+        userId: req.user!.id,
+        action: "create",
+        subject: "budget_forecast",
+        projectId: projectIdNum,
+        details: `Criou previsão orçamentária para ${newForecast.period} (${newForecast.amount})`
+      });
+      
+      res.status(201).json(newForecast);
+    } catch (error: any) {
+      if (error.name === "ZodError") {
+        return res.status(400).json({ message: "Dados inválidos", errors: error.format() });
+      }
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Atualizar uma previsão orçamentária
+  app.put("/api/budget-forecasts/:id", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      const forecastId = Number(id);
+      
+      // Verificar se a previsão existe
+      const forecast = await storage.getBudgetForecast(forecastId);
+      if (!forecast) {
+        return res.status(404).json({ message: "Previsão orçamentária não encontrada" });
+      }
+      
+      // Verificar permissões no projeto
+      const projectMembers = await storage.getProjectMembers(forecast.projectId);
+      const userMember = projectMembers.find(member => member.userId === req.user!.id);
+      
+      if (!userMember && req.user!.role !== "admin") {
+        return res.status(403).json({ message: "Acesso negado a esta previsão orçamentária" });
+      }
+      
+      if (userMember && !["admin", "manager"].includes(userMember.role) && req.user!.role !== "admin") {
+        return res.status(403).json({ 
+          message: "Você não tem permissão para editar previsões orçamentárias" 
+        });
+      }
+      
+      // Validar dados com o schema
+      const forecastData = insertBudgetForecastSchema.partial().parse(req.body);
+      
+      // Verificar se a categoria existe e pertence ao projeto se estiver sendo atualizada
+      if (forecastData.categoryId) {
+        const category = await storage.getBudgetCategory(forecastData.categoryId);
+        if (!category) {
+          return res.status(404).json({ message: "Categoria de orçamento não encontrada" });
+        }
+        
+        if (category.projectId !== forecast.projectId) {
+          return res.status(400).json({ 
+            message: "Esta categoria de orçamento não pertence ao projeto selecionado" 
+          });
+        }
+      }
+      
+      // Atualizar previsão
+      const updatedForecast = await storage.updateBudgetForecast(forecastId, forecastData);
+      
+      // Registrar atividade
+      await storage.createActivity({
+        userId: req.user!.id,
+        action: "update",
+        subject: "budget_forecast",
+        projectId: forecast.projectId,
+        details: `Atualizou previsão orçamentária para ${forecast.period}`
+      });
+      
+      res.json(updatedForecast);
+    } catch (error: any) {
+      if (error.name === "ZodError") {
+        return res.status(400).json({ message: "Dados inválidos", errors: error.format() });
+      }
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Excluir uma previsão orçamentária
+  app.delete("/api/budget-forecasts/:id", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      const forecastId = Number(id);
+      
+      // Verificar se a previsão existe
+      const forecast = await storage.getBudgetForecast(forecastId);
+      if (!forecast) {
+        return res.status(404).json({ message: "Previsão orçamentária não encontrada" });
+      }
+      
+      // Verificar permissões no projeto
+      const projectMembers = await storage.getProjectMembers(forecast.projectId);
+      const userMember = projectMembers.find(member => member.userId === req.user!.id);
+      
+      if (!userMember && req.user!.role !== "admin") {
+        return res.status(403).json({ message: "Acesso negado a esta previsão orçamentária" });
+      }
+      
+      if (userMember && !["admin"].includes(userMember.role) && req.user!.role !== "admin") {
+        return res.status(403).json({ 
+          message: "Você não tem permissão para excluir previsões orçamentárias" 
+        });
+      }
+      
+      // Excluir previsão
+      await storage.deleteBudgetForecast(forecastId);
+      
+      // Registrar atividade
+      await storage.createActivity({
+        userId: req.user!.id,
+        action: "delete",
+        subject: "budget_forecast",
+        projectId: forecast.projectId,
+        details: `Excluiu previsão orçamentária para ${forecast.period}`
+      });
+      
+      res.status(204).send();
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Obter resumo do orçamento de um projeto
+  app.get("/api/projects/:projectId/budget-summary", isProjectMember, async (req: Request, res: Response) => {
+    try {
+      const { projectId } = req.params;
+      const summary = await storage.getProjectBudgetSummary(Number(projectId));
+      res.json(summary);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
     }
   });
 
