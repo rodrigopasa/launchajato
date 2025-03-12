@@ -461,7 +461,7 @@ export default function TaskDetail() {
                             </Avatar>
                             <span className="font-medium text-sm">{comment.user?.name}</span>
                             <span className="text-xs text-gray-500 ml-auto">
-                              {format(new Date(comment.createdAt), "PPp", { locale: ptBR })}
+                              {comment.createdAt ? format(new Date(comment.createdAt), "PPp", { locale: ptBR }) : "Data desconhecida"}
                             </span>
                           </div>
                           <p className="text-gray-700">{comment.content}</p>

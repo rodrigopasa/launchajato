@@ -522,7 +522,7 @@ export default function ProjectDetail() {
                         name={task.name}
                         priority={task.priority}
                         project={project.name}
-                        dueDate={task.dueDate || new Date().toISOString()}
+                        dueDate={task.dueDate ? task.dueDate : new Date().toISOString()}
                         completed={task.status === "completed"}
                         onStatusChange={handleTaskStatusChange}
                         onViewDetails={() => setLocation(`/tasks/${task.id}`)}
@@ -567,7 +567,7 @@ export default function ProjectDetail() {
                         action={activity.action}
                         subject={activity.subject}
                         details={activity.details}
-                        time={activity.createdAt}
+                        time={activity.createdAt ? activity.createdAt : new Date().toISOString()}
                       />
                     ))}
                   </div>
@@ -616,7 +616,7 @@ export default function ProjectDetail() {
                       name={task.name}
                       priority={task.priority}
                       project={project.name}
-                      dueDate={task.dueDate || new Date().toISOString()}
+                      dueDate={task.dueDate ? task.dueDate : new Date().toISOString()}
                       completed={task.status === "completed"}
                       onStatusChange={handleTaskStatusChange}
                       onViewDetails={() => setLocation(`/tasks/${task.id}`)}
@@ -753,7 +753,7 @@ export default function ProjectDetail() {
                       action={activity.action}
                       subject={activity.subject}
                       details={activity.details}
-                      time={activity.createdAt}
+                      time={activity.createdAt ? activity.createdAt : new Date().toISOString()}
                     />
                   ))}
                 </div>
