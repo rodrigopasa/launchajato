@@ -104,6 +104,30 @@ export interface IStorage {
   createIntegration(integration: InsertIntegration): Promise<Integration>;
   updateIntegration(id: number, data: Partial<InsertIntegration>): Promise<Integration | undefined>;
   deleteIntegration(id: number): Promise<boolean>;
+  
+  // Payment Integrations
+  getPaymentIntegration(id: number): Promise<PaymentIntegration | undefined>;
+  getPaymentIntegrationByProvider(provider: string): Promise<PaymentIntegration | undefined>;
+  getAllPaymentIntegrations(): Promise<PaymentIntegration[]>;
+  createPaymentIntegration(integration: InsertPaymentIntegration): Promise<PaymentIntegration>;
+  updatePaymentIntegration(id: number, data: Partial<InsertPaymentIntegration>): Promise<PaymentIntegration | undefined>;
+  deletePaymentIntegration(id: number): Promise<boolean>;
+  
+  // Admin Settings
+  getAdminSettings(): Promise<Record<string, any> | undefined>;
+  getAdminSetting(key: string): Promise<AdminSetting | undefined>;
+  createAdminSetting(setting: InsertAdminSetting): Promise<AdminSetting>;
+  updateAdminSetting(key: string, value: any): Promise<AdminSetting | undefined>;
+  updateAdminSettings(settings: Record<string, any>): Promise<Record<string, any>>;
+  deleteAdminSetting(key: string): Promise<boolean>;
+  
+  // Partner Agencies
+  getPartnerAgency(id: number): Promise<PartnerAgency | undefined>;
+  getPartnerAgencyByEmail(email: string): Promise<PartnerAgency | undefined>;
+  getAllPartnerAgencies(): Promise<PartnerAgency[]>;
+  createPartnerAgency(agency: InsertPartnerAgency): Promise<PartnerAgency>;
+  updatePartnerAgency(id: number, data: Partial<InsertPartnerAgency>): Promise<PartnerAgency | undefined>;
+  deletePartnerAgency(id: number): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
@@ -641,6 +665,171 @@ export class MemStorage implements IStorage {
   
   async deleteIntegration(id: number): Promise<boolean> {
     return this.integrations.delete(id);
+  }
+
+  // Payment Integrations methods
+  private paymentIntegrations: Map<number, PaymentIntegration> = new Map();
+  private paymentIntegrationIdCounter: number = 1;
+
+  async getPaymentIntegration(id: number): Promise<PaymentIntegration | undefined> {
+    return this.paymentIntegrations.get(id);
+  }
+
+  async getPaymentIntegrationByProvider(provider: string): Promise<PaymentIntegration | undefined> {
+    return Array.from(this.paymentIntegrations.values()).find(
+      (integration) => integration.provider === provider
+    );
+  }
+
+  async getAllPaymentIntegrations(): Promise<PaymentIntegration[]> {
+    return Array.from(this.paymentIntegrations.values());
+  }
+
+  async createPaymentIntegration(insertIntegration: InsertPaymentIntegration): Promise<PaymentIntegration> {
+    const now = new Date();
+    const id = this.paymentIntegrationIdCounter++;
+    const integration: PaymentIntegration = { 
+      ...insertIntegration, 
+      id, 
+      createdAt: now, 
+      updatedAt: now 
+    };
+    this.paymentIntegrations.set(id, integration);
+    return integration;
+  }
+
+  async updatePaymentIntegration(id: number, data: Partial<InsertPaymentIntegration>): Promise<PaymentIntegration | undefined> {
+    const integration = this.paymentIntegrations.get(id);
+    if (!integration) return undefined;
+    
+    const updatedIntegration = { 
+      ...integration, 
+      ...data, 
+      updatedAt: new Date() 
+    };
+    this.paymentIntegrations.set(id, updatedIntegration);
+    return updatedIntegration;
+  }
+
+  async deletePaymentIntegration(id: number): Promise<boolean> {
+    return this.paymentIntegrations.delete(id);
+  }
+
+  // Admin Settings methods
+  private adminSettings: Map<string, AdminSetting> = new Map();
+  private adminSettingIdCounter: number = 1;
+
+  async getAdminSettings(): Promise<Record<string, any> | undefined> {
+    const settings = Array.from(this.adminSettings.values());
+    if (settings.length === 0) return undefined;
+    
+    // Convert settings array to record
+    const result: Record<string, any> = {};
+    for (const setting of settings) {
+      result[setting.settingKey] = setting.settingValue;
+    }
+    return result;
+  }
+
+  async getAdminSetting(key: string): Promise<AdminSetting | undefined> {
+    return Array.from(this.adminSettings.values()).find(
+      (setting) => setting.settingKey === key
+    );
+  }
+
+  async createAdminSetting(insertSetting: InsertAdminSetting): Promise<AdminSetting> {
+    const id = this.adminSettingIdCounter++;
+    const setting: AdminSetting = { 
+      ...insertSetting, 
+      id, 
+      updatedAt: new Date() 
+    };
+    
+    this.adminSettings.set(insertSetting.settingKey, setting);
+    return setting;
+  }
+
+  async updateAdminSetting(key: string, value: any): Promise<AdminSetting | undefined> {
+    const setting = await this.getAdminSetting(key);
+    if (!setting) {
+      // Create new setting if it doesn't exist
+      return this.createAdminSetting({
+        settingKey: key,
+        settingValue: value,
+        description: '',
+        category: 'general'
+      });
+    }
+    
+    const updatedSetting = { 
+      ...setting, 
+      settingValue: value, 
+      updatedAt: new Date() 
+    };
+    this.adminSettings.set(key, updatedSetting);
+    return updatedSetting;
+  }
+
+  async updateAdminSettings(settings: Record<string, any>): Promise<Record<string, any>> {
+    // Update or create each setting
+    for (const [key, value] of Object.entries(settings)) {
+      await this.updateAdminSetting(key, value);
+    }
+    return settings;
+  }
+
+  async deleteAdminSetting(key: string): Promise<boolean> {
+    const setting = await this.getAdminSetting(key);
+    if (!setting) return false;
+    return this.adminSettings.delete(key);
+  }
+
+  // Partner Agencies methods
+  private partnerAgencies: Map<number, PartnerAgency> = new Map();
+  private partnerAgencyIdCounter: number = 1;
+
+  async getPartnerAgency(id: number): Promise<PartnerAgency | undefined> {
+    return this.partnerAgencies.get(id);
+  }
+
+  async getPartnerAgencyByEmail(email: string): Promise<PartnerAgency | undefined> {
+    return Array.from(this.partnerAgencies.values()).find(
+      (agency) => agency.email === email
+    );
+  }
+
+  async getAllPartnerAgencies(): Promise<PartnerAgency[]> {
+    return Array.from(this.partnerAgencies.values());
+  }
+
+  async createPartnerAgency(insertAgency: InsertPartnerAgency): Promise<PartnerAgency> {
+    const now = new Date();
+    const id = this.partnerAgencyIdCounter++;
+    const agency: PartnerAgency = { 
+      ...insertAgency, 
+      id, 
+      createdAt: now, 
+      updatedAt: now 
+    };
+    this.partnerAgencies.set(id, agency);
+    return agency;
+  }
+
+  async updatePartnerAgency(id: number, data: Partial<InsertPartnerAgency>): Promise<PartnerAgency | undefined> {
+    const agency = this.partnerAgencies.get(id);
+    if (!agency) return undefined;
+    
+    const updatedAgency = { 
+      ...agency, 
+      ...data, 
+      updatedAt: new Date() 
+    };
+    this.partnerAgencies.set(id, updatedAgency);
+    return updatedAgency;
+  }
+
+  async deletePartnerAgency(id: number): Promise<boolean> {
+    return this.partnerAgencies.delete(id);
   }
 }
 

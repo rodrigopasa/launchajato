@@ -1511,6 +1511,222 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(500).json({ message: "Erro ao testar integração WhatsApp" });
     }
   });
+
+  // Rotas de Super Admin
+  // Verificação de permissão de super admin
+  const isSuperAdmin = (req: Request, res: Response, next: Function) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ message: "Não autenticado" });
+    }
+
+    storage.getUser(req.session.userId).then(user => {
+      if (!user || user.role !== "admin") {
+        return res.status(403).json({ message: "Acesso negado: permissão de administrador necessária" });
+      }
+      next();
+    }).catch(error => {
+      console.error("Erro ao verificar permissões de admin:", error);
+      return res.status(500).json({ message: "Erro interno ao verificar permissões" });
+    });
+  };
+
+  // Configurações do sistema
+  app.get("/api/admin/settings", isSuperAdmin, async (req: Request, res: Response) => {
+    try {
+      // Buscar configurações do banco ou retornar padrões
+      const settings = await storage.getAdminSettings();
+      if (!settings || Object.keys(settings).length === 0) {
+        return res.json({
+          appName: "LaunchRocket",
+          defaultPlanTrialDays: 14,
+          maxFileSize: 10,
+          maintanceMode: false,
+          disableRegistration: false,
+          notificationEmail: "",
+          customCss: "",
+          defaultCurrency: "BRL",
+          termsUrl: "",
+          privacyUrl: ""
+        });
+      }
+      return res.json(settings);
+    } catch (error) {
+      console.error("Erro ao buscar configurações admin:", error);
+      return res.status(500).json({ message: "Erro ao buscar configurações" });
+    }
+  });
+
+  app.put("/api/admin/settings", isSuperAdmin, async (req: Request, res: Response) => {
+    try {
+      const settingsData = req.body;
+      const settings = await storage.updateAdminSettings(settingsData);
+      return res.json(settings);
+    } catch (error) {
+      console.error("Erro ao atualizar configurações admin:", error);
+      return res.status(500).json({ message: "Erro ao atualizar configurações" });
+    }
+  });
+
+  // Agências parceiras
+  app.get("/api/admin/partner-agencies", isSuperAdmin, async (req: Request, res: Response) => {
+    try {
+      const agencies = await storage.getAllPartnerAgencies();
+      return res.json(agencies);
+    } catch (error) {
+      console.error("Erro ao buscar agências parceiras:", error);
+      return res.status(500).json({ message: "Erro ao buscar agências parceiras" });
+    }
+  });
+
+  app.get("/api/admin/partner-agencies/:id", isSuperAdmin, async (req: Request, res: Response) => {
+    try {
+      const agencyId = parseInt(req.params.id);
+      const agency = await storage.getPartnerAgency(agencyId);
+      if (!agency) {
+        return res.status(404).json({ message: "Agência parceira não encontrada" });
+      }
+      return res.json(agency);
+    } catch (error) {
+      console.error("Erro ao buscar agência parceira:", error);
+      return res.status(500).json({ message: "Erro ao buscar agência parceira" });
+    }
+  });
+
+  app.post("/api/admin/partner-agencies", isSuperAdmin, async (req: Request, res: Response) => {
+    try {
+      // Converter datas de string para Date se necessário
+      const body = {...req.body};
+      if (body.trialStartDate && typeof body.trialStartDate === 'string') {
+        body.trialStartDate = new Date(body.trialStartDate);
+      }
+      if (body.trialEndDate && typeof body.trialEndDate === 'string') {
+        body.trialEndDate = new Date(body.trialEndDate);
+      }
+      
+      // Adicionar o ID do usuário atual como criador
+      const agencyData = {
+        ...body,
+        createdBy: req.session.userId!
+      };
+
+      const agency = await storage.createPartnerAgency(agencyData);
+      return res.status(201).json(agency);
+    } catch (error) {
+      console.error("Erro ao criar agência parceira:", error);
+      return res.status(500).json({ message: "Erro ao criar agência parceira" });
+    }
+  });
+
+  app.put("/api/admin/partner-agencies/:id", isSuperAdmin, async (req: Request, res: Response) => {
+    try {
+      const agencyId = parseInt(req.params.id);
+      
+      // Converter datas de string para Date se necessário
+      const body = {...req.body};
+      if (body.trialStartDate && typeof body.trialStartDate === 'string') {
+        body.trialStartDate = new Date(body.trialStartDate);
+      }
+      if (body.trialEndDate && typeof body.trialEndDate === 'string') {
+        body.trialEndDate = new Date(body.trialEndDate);
+      }
+      
+      const agency = await storage.updatePartnerAgency(agencyId, body);
+      if (!agency) {
+        return res.status(404).json({ message: "Agência parceira não encontrada" });
+      }
+      return res.json(agency);
+    } catch (error) {
+      console.error("Erro ao atualizar agência parceira:", error);
+      return res.status(500).json({ message: "Erro ao atualizar agência parceira" });
+    }
+  });
+
+  app.delete("/api/admin/partner-agencies/:id", isSuperAdmin, async (req: Request, res: Response) => {
+    try {
+      const agencyId = parseInt(req.params.id);
+      const success = await storage.deletePartnerAgency(agencyId);
+      if (!success) {
+        return res.status(404).json({ message: "Agência parceira não encontrada" });
+      }
+      return res.json({ success: true });
+    } catch (error) {
+      console.error("Erro ao excluir agência parceira:", error);
+      return res.status(500).json({ message: "Erro ao excluir agência parceira" });
+    }
+  });
+
+  // Integrações de pagamento
+  app.get("/api/admin/payment-integrations/mercado-pago", isSuperAdmin, async (req: Request, res: Response) => {
+    try {
+      const integration = await storage.getPaymentIntegrationByProvider("mercado_pago");
+      if (!integration) {
+        return res.json({
+          accessToken: "",
+          publicKey: "",
+          enabled: false,
+          testMode: true,
+          webhookUrl: "",
+          webhookSecret: ""
+        });
+      }
+      
+      // Extrair os dados relevantes da integração
+      const { credentials, settings, ...rest } = integration;
+      return res.json({
+        accessToken: credentials?.accessToken || "",
+        publicKey: credentials?.publicKey || "",
+        enabled: rest.enabled,
+        testMode: settings?.testMode || true,
+        webhookUrl: rest.webhook_url || "",
+        webhookSecret: rest.webhook_secret || ""
+      });
+    } catch (error) {
+      console.error("Erro ao buscar configuração Mercado Pago:", error);
+      return res.status(500).json({ message: "Erro ao buscar configuração" });
+    }
+  });
+
+  app.put("/api/admin/payment-integrations/mercado-pago", isSuperAdmin, async (req: Request, res: Response) => {
+    try {
+      const { accessToken, publicKey, enabled, testMode, webhookUrl, webhookSecret } = req.body;
+      
+      // Formatar os dados para o formato de armazenamento
+      const integrationData = {
+        provider: "mercado_pago",
+        name: "Mercado Pago",
+        enabled,
+        organizationId: 1, // ID da organização principal/sistema
+        configuredBy: req.session.userId!,
+        webhook_url: webhookUrl,
+        webhook_secret: webhookSecret,
+        credentials: {
+          accessToken,
+          publicKey
+        },
+        settings: {
+          testMode
+        }
+      };
+
+      // Verificar se a integração já existe
+      const existingIntegration = await storage.getPaymentIntegrationByProvider("mercado_pago");
+      
+      let integration;
+      if (existingIntegration) {
+        integration = await storage.updatePaymentIntegration(existingIntegration.id, integrationData);
+      } else {
+        integration = await storage.createPaymentIntegration(integrationData);
+      }
+
+      return res.json({
+        success: true,
+        message: "Configuração salva com sucesso"
+      });
+    } catch (error) {
+      console.error("Erro ao salvar configuração Mercado Pago:", error);
+      return res.status(500).json({ message: "Erro ao salvar configuração" });
+    }
+  });
   
   // Registrar rotas do chatbot
   app.use('/api/chatbot', chatbotRoutes);
