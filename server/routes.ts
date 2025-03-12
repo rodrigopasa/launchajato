@@ -1728,6 +1728,84 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(500).json({ message: "Erro ao salvar configuração" });
     }
   });
+
+  // API para buscar configurações do Stripe
+  app.get("/api/admin/payment-integrations/stripe", isSuperAdmin, async (req: Request, res: Response) => {
+    try {
+      const integration = await storage.getPaymentIntegrationByProvider("stripe");
+      if (!integration) {
+        return res.json({
+          secretKey: "",
+          publicKey: "",
+          enabled: false,
+          testMode: true,
+          webhookUrl: "",
+          webhookSecret: "",
+          priceId: ""
+        });
+      }
+      
+      // Recuperar as credenciais do Stripe
+      const credentials = integration.credentials || {};
+      const settings = integration.settings || {};
+      
+      res.json({
+        secretKey: credentials.secretKey || "",
+        publicKey: credentials.publicKey || "",
+        enabled: integration.enabled,
+        testMode: settings.testMode || true,
+        webhookUrl: integration.webhook_url || "",
+        webhookSecret: integration.webhook_secret || "",
+        priceId: settings.priceId || ""
+      });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // API para atualizar configurações do Stripe
+  app.put("/api/admin/payment-integrations/stripe", isSuperAdmin, async (req: Request, res: Response) => {
+    try {
+      const { secretKey, publicKey, enabled, testMode, webhookUrl, webhookSecret, priceId } = req.body;
+      
+      // Formatar os dados para o formato de armazenamento
+      const integrationData = {
+        provider: "stripe",
+        name: "Stripe",
+        enabled,
+        organizationId: 1, // ID da organização principal/sistema
+        configuredBy: req.session.userId!,
+        webhook_url: webhookUrl,
+        webhook_secret: webhookSecret,
+        credentials: {
+          secretKey,
+          publicKey
+        },
+        settings: {
+          testMode,
+          priceId
+        }
+      };
+      
+      // Verificar se a integração já existe
+      const existingIntegration = await storage.getPaymentIntegrationByProvider("stripe");
+      
+      let integration;
+      if (existingIntegration) {
+        integration = await storage.updatePaymentIntegration(existingIntegration.id, integrationData);
+      } else {
+        integration = await storage.createPaymentIntegration(integrationData);
+      }
+
+      return res.json({
+        success: true,
+        message: "Configuração salva com sucesso"
+      });
+    } catch (error) {
+      console.error("Erro ao salvar configuração Stripe:", error);
+      return res.status(500).json({ message: "Erro ao salvar configuração" });
+    }
+  });
   
   // Registrar rotas do chatbot
   app.use('/api/chatbot', chatbotRoutes);
