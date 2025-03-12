@@ -98,6 +98,11 @@ function AppRoutes() {
               <PaymentSuccess />
             </PageTransition>
           </Route>
+          <Route>
+            <PageTransition>
+              <NotFound />
+            </PageTransition>
+          </Route>
         </Switch>
       </AnimatePresence>
     );
