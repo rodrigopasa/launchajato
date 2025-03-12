@@ -1,3 +1,4 @@
+import React, { useEffect } from "react";
 import { Switch, Route, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import Checkout from "@/pages/checkout";
@@ -46,6 +47,17 @@ function PageTransition({ children }: { children: React.ReactNode }) {
 function AppRoutes() {
   const [location, setLocation] = useLocation();
   const { isAuthenticated, isLoading } = useAuth();
+  const publicPaths = ["/", "/login", "/register", "/checkout", "/payment-success"];
+  
+  // Usar useEffect para redirecionamentos para evitar alterações de estado durante a renderização
+  useEffect(() => {
+    // Redirecionamento baseado na autenticação
+    if (isAuthenticated && (location === "/" || location === "/login" || location === "/register")) {
+      setLocation("/dashboard");
+    } else if (!isAuthenticated && !publicPaths.includes(location)) {
+      setLocation("/login");
+    }
+  }, [isAuthenticated, location, publicPaths, setLocation]);
 
   // Se estiver carregando, não faz nada ainda
   if (isLoading) {
@@ -54,18 +66,6 @@ function AppRoutes() {
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
       </div>
     );
-  }
-
-  // Redirecionamento baseado na autenticação
-  if (isAuthenticated && (location === "/" || location === "/login" || location === "/register")) {
-    setLocation("/dashboard");
-    return null;
-  }
-
-  const publicPaths = ["/", "/login", "/register", "/checkout", "/payment-success"];
-  if (!isAuthenticated && !publicPaths.includes(location)) {
-    setLocation("/login");
-    return null;
   }
 
   // Renderizar páginas públicas
