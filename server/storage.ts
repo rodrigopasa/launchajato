@@ -1166,10 +1166,10 @@ export class DatabaseStorage implements IStorage {
 
 // Para desenvolvimento, é possível alternar entre armazenamento em memória ou banco de dados
 // Usar MemStorage para desenvolvimento sem banco de dados
-// export const storage = new MemStorage();
+export const storage = new MemStorage();
 
 // Usar DatabaseStorage para produção com banco de dados PostgreSQL
-export const storage = new DatabaseStorage();
+// export const storage = new DatabaseStorage();
 
 // Inicializar o usuário admin se não existir
 async function initializeAdmin() {
