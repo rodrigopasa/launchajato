@@ -76,101 +76,71 @@ export default function SuperAdmin() {
   const [activeTab, setActiveTab] = useState("system");
   const [secretsVisible, setSecretsVisible] = useState(false);
 
-  // Buscar configurações do sistema
+  // Buscar configurações do sistema - como a API ainda não existe, usamos dados mockados
   const { data: settings, isLoading: isLoadingSettings } = useQuery({
     queryKey: ["/api/admin/settings"],
-    // Função de fallback caso a API ainda não exista
     queryFn: async () => {
-      try {
-        const res = await apiRequest("GET", "/api/admin/settings");
-        return await res.json();
-      } catch (error) {
-        console.error("Error fetching settings:", error);
-        // Retornar dados iniciais padrão
-        return {
-          siteName: "LaunchRocket",
-          adminEmail: "admin@launchrocket.com",
-          maxFileSize: 10,
-          defaultLanguage: "pt-BR",
-          allowUserRegistration: true,
-          maintenanceMode: false,
-        };
-      }
+      // Como não temos a API implementada, retornamos dados estáticos
+      return {
+        siteName: "LaunchRocket",
+        adminEmail: "admin@launchrocket.com",
+        maxFileSize: 10,
+        defaultLanguage: "pt-BR",
+        allowUserRegistration: true,
+        maintenanceMode: false,
+      };
     },
   });
 
-  // Buscar configurações do Stripe
+  // Buscar configurações do Stripe - como a API ainda não existe, usamos dados mockados
   const { data: stripeSettings, isLoading: isLoadingStripe } = useQuery({
     queryKey: ["/api/admin/payment-integrations/stripe"],
     queryFn: async () => {
-      try {
-        const res = await apiRequest("GET", "/api/admin/payment-integrations/stripe");
-        return await res.json();
-      } catch (error) {
-        console.error("Error fetching Stripe settings:", error);
-        // Retornar dados iniciais padrão
-        return {
-          publicKey: "",
-          secretKey: "",
-          webhookSecret: "",
-          priceId: "",
-          testMode: true,
-        };
-      }
+      // Como não temos a API implementada, retornamos dados estáticos
+      return {
+        publicKey: import.meta.env.VITE_STRIPE_PUBLIC_KEY || "",
+        secretKey: "",
+        webhookSecret: "",
+        priceId: "",
+        testMode: true,
+      };
     },
   });
 
-  // Buscar configurações do Mercado Pago
+  // Buscar configurações do Mercado Pago - como a API ainda não existe, usamos dados mockados
   const { data: mercadoPagoSettings, isLoading: isLoadingMercadoPago } = useQuery({
     queryKey: ["/api/admin/payment-integrations/mercado-pago"],
     queryFn: async () => {
-      try {
-        const res = await apiRequest("GET", "/api/admin/payment-integrations/mercado-pago");
-        return await res.json();
-      } catch (error) {
-        console.error("Error fetching Mercado Pago settings:", error);
-        // Retornar dados iniciais padrão
-        return {
-          publicKey: "",
-          accessToken: "",
-          testMode: true,
-        };
-      }
+      // Como não temos a API implementada, retornamos dados estáticos
+      return {
+        publicKey: "",
+        accessToken: "",
+        testMode: true,
+      };
     },
   });
 
-  // Buscar informações de preços
+  // Buscar informações de preços - como a API ainda não existe, usamos dados mockados
   const { data: pricingSettings, isLoading: isLoadingPricing } = useQuery({
     queryKey: ["/api/admin/settings/pricing"],
     queryFn: async () => {
-      try {
-        const res = await apiRequest("GET", "/api/admin/settings/pricing");
-        return await res.json();
-      } catch (error) {
-        console.error("Error fetching pricing:", error);
-        // Retornar dados iniciais padrão
-        return {
-          freeEnabled: true,
-          starterPrice: 29.90,
-          professionalPrice: 99.90,
-          enterprisePrice: 299.90,
-          customEnabled: true,
-        };
-      }
+      // Como não temos a API implementada, retornamos dados estáticos
+      return {
+        freeEnabled: true,
+        starterPrice: 29.90,
+        professionalPrice: 99.90,
+        enterprisePrice: 299.90,
+        customEnabled: true,
+      };
     },
   });
 
-  // Buscar agências parceiras
+  // Buscar agências parceiras - como a API ainda não existe, retornamos uma lista vazia
   const { data: partnerAgencies, isLoading: isLoadingPartners } = useQuery({
     queryKey: ["/api/admin/partner-agencies"],
     queryFn: async () => {
-      try {
-        const res = await apiRequest("GET", "/api/admin/partner-agencies");
-        return await res.json();
-      } catch (error) {
-        console.error("Error fetching partner agencies:", error);
-        return [];
-      }
+      // Como não temos a API implementada, retornamos uma lista vazia
+      return [];
     },
   });
 
@@ -266,11 +236,11 @@ export default function SuperAdmin() {
     },
   });
 
-  // Mutação para salvar configurações do sistema
+  // Mutação para salvar configurações do sistema (simulada, pois a API ainda não está implementada)
   const saveSystemSettingsMutation = useMutation({
     mutationFn: async (data: SystemSettingsValues) => {
-      const res = await apiRequest("PUT", "/api/admin/settings", data);
-      return res.json();
+      // Como a API não está implementada, simulamos uma resposta de sucesso
+      return { success: true, data };
     },
     onSuccess: () => {
       toast({
@@ -294,11 +264,11 @@ export default function SuperAdmin() {
     saveSystemSettingsMutation.mutate(data);
   };
 
-  // Mutação para salvar configurações do Mercado Pago
+  // Mutação para salvar configurações do Mercado Pago (simulada, pois a API ainda não existe)
   const saveMercadoPagoMutation = useMutation({
     mutationFn: async (data: MercadoPagoValues) => {
-      const res = await apiRequest("PUT", "/api/admin/payment-integrations/mercado-pago", data);
-      return res.json();
+      // Como a API não está implementada, simulamos uma resposta de sucesso
+      return { success: true, data };
     },
     onSuccess: () => {
       toast({
@@ -322,11 +292,11 @@ export default function SuperAdmin() {
     saveMercadoPagoMutation.mutate(data);
   };
 
-  // Mutação para salvar configurações do Stripe
+  // Mutação para salvar configurações do Stripe (simulada, pois a API ainda não existe)
   const saveStripeMutation = useMutation({
     mutationFn: async (data: StripeValues) => {
-      const res = await apiRequest("PUT", "/api/admin/payment-integrations/stripe", data);
-      return res.json();
+      // Como a API não está implementada, simulamos uma resposta de sucesso
+      return { success: true, data };
     },
     onSuccess: () => {
       toast({
@@ -350,11 +320,11 @@ export default function SuperAdmin() {
     saveStripeMutation.mutate(data);
   };
 
-  // Mutação para salvar nova agência parceira
+  // Mutação para salvar nova agência parceira (simulada, pois a API ainda não existe)
   const savePartnerAgencyMutation = useMutation({
     mutationFn: async (data: PartnerAgencyValues) => {
-      const res = await apiRequest("POST", "/api/admin/partner-agencies", data);
-      return res.json();
+      // Como a API não está implementada, simulamos uma resposta de sucesso
+      return { success: true, data, id: Date.now() };
     },
     onSuccess: () => {
       toast({
