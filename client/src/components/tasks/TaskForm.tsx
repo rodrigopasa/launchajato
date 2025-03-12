@@ -57,6 +57,9 @@ interface TaskFormProps {
 }
 
 export function TaskForm({ defaultValues, onSubmit, projectId, isLoading = false }: TaskFormProps) {
+  // Estado para as tags
+  const [tags, setTags] = useState<string[]>([]);
+  
   // Initialize the form with default values
   const form = useForm<TaskFormValues>({
     resolver: zodResolver(formSchema),
@@ -71,6 +74,16 @@ export function TaskForm({ defaultValues, onSubmit, projectId, isLoading = false
       dueDate: defaultValues?.dueDate,
     },
   });
+  
+  // Função customizada de submissão para incluir as tags
+  const handleSubmit = (values: TaskFormValues) => {
+    // Em um ambiente de produção, você enviaria as tags junto com os valores
+    // Para a demo, vamos apenas mostrar como seria a integração
+    console.log("Tags selecionadas:", tags);
+    
+    // Chamar a função onSubmit original
+    onSubmit(values);
+  };
 
   // Fetch all projects
   const { data: projects } = useQuery({
@@ -92,7 +105,7 @@ export function TaskForm({ defaultValues, onSubmit, projectId, isLoading = false
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
         <FormField
           control={form.control}
           name="name"
@@ -320,6 +333,20 @@ export function TaskForm({ defaultValues, onSubmit, projectId, isLoading = false
             </FormItem>
           )}
         />
+
+        <div className="space-y-2">
+          <FormLabel>Tags</FormLabel>
+          <div className="bg-white border rounded-md p-3">
+            <TaskTags
+              initialTags={[]}
+              onChange={setTags}
+              maxTags={8}
+            />
+            <p className="text-xs text-muted-foreground mt-2">
+              Adicione tags para categorizar e facilitar a busca da tarefa.
+            </p>
+          </div>
+        </div>
 
         <Button type="submit" className="w-full" disabled={isLoading}>
           {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
