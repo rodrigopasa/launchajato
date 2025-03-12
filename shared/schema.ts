@@ -64,26 +64,17 @@ export const subscriptions = pgTable("subscriptions", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-// Users table (com referência à organização)
+// Users table
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
-  username: text("username").notNull(),
+  username: text("username").notNull().unique(),
   password: text("password").notNull(),
   name: text("name").notNull(),
-  email: text("email").notNull(),
+  email: text("email").notNull().unique(),
   role: roleEnum("role").notNull().default('member'),
   profession: professionEnum("profession").default('other'),
   avatar: text("avatar"),
-  emailVerified: boolean("email_verified").default(false),
-  lastLoginAt: timestamp("last_login_at"),
   createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-}, (table) => {
-  return {
-    // Agora username e email são únicos por usuário dentro de uma organização
-    emailIndex: unique("users_email_idx").on(table.email),
-    usernameIndex: unique("users_username_idx").on(table.username),
-  }
 });
 
 // Organization members table (junction entre users e organizations)
@@ -319,7 +310,6 @@ export const insertPhaseSchema = createInsertSchema(phases).pick({
 });
 
 export const insertTaskSchema = createInsertSchema(tasks).pick({
-  organizationId: true,
   projectId: true,
   phaseId: true,
   name: true,
@@ -328,8 +318,6 @@ export const insertTaskSchema = createInsertSchema(tasks).pick({
   priority: true,
   status: true,
   dueDate: true,
-  estimatedHours: true,
-  createdBy: true,
 });
 
 export const insertChecklistItemSchema = createInsertSchema(checklistItems).pick({
@@ -341,7 +329,6 @@ export const insertChecklistItemSchema = createInsertSchema(checklistItems).pick
 });
 
 export const insertFileSchema = createInsertSchema(files).pick({
-  organizationId: true,
   projectId: true,
   taskId: true,
   name: true,
@@ -352,7 +339,6 @@ export const insertFileSchema = createInsertSchema(files).pick({
 });
 
 export const insertActivitySchema = createInsertSchema(activities).pick({
-  organizationId: true,
   userId: true,
   projectId: true,
   taskId: true,
@@ -362,7 +348,6 @@ export const insertActivitySchema = createInsertSchema(activities).pick({
 });
 
 export const insertCommentSchema = createInsertSchema(comments).pick({
-  organizationId: true,
   projectId: true,
   taskId: true,
   userId: true,
@@ -371,7 +356,6 @@ export const insertCommentSchema = createInsertSchema(comments).pick({
 });
 
 export const insertIntegrationSchema = createInsertSchema(integrations).pick({
-  organizationId: true,
   type: true,
   name: true,
   enabled: true,
