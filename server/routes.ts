@@ -183,21 +183,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       // Verificar se é o primeiro usuário do sistema (permitir criação do superadmin)
       const allUsers = await storage.getAllUsers();
-      const hasAdmin = allUsers.some(user => user.role === 'admin');
+      const isFirstUser = allUsers.length === 0;
       
-      // Se já existem admins e o usuário não está autenticado como admin, verificar permissão
-      if (hasAdmin && 
-          (!req.body.organizationId && !req.body.orgRole) && 
-          (!res.locals.user || res.locals.user.role !== 'admin')) {
+      // Se não for o primeiro usuário e estiver tentando criar um admin sem ser admin
+      if (!isFirstUser && 
+          req.body.role === 'admin' && 
+          (!req.session || !req.session.userId)) {
+        console.log("Tentativa de criar usuário admin sem permissão");
         return res.status(403).json({ message: "Permissão negada" });
       }
       
-      // Permitir criação do primeiro usuário como admin
+      // Permitir criação do primeiro usuário como admin com nome específico
       const validatedData = insertUserSchema.parse(req.body);
       
-      // Se for o primeiro usuário, forçar role como admin
-      if (!hasAdmin && !validatedData.partnerAgencyId) {
+      // Se for o primeiro usuário, garantir que username='admin' para acesso SuperAdmin
+      if (isFirstUser) {
+        if (validatedData.username !== 'admin') {
+          return res.status(400).json({ 
+            message: "O primeiro usuário deve ter o nome de usuário 'admin'"
+          });
+        }
         validatedData.role = 'admin';
+        console.log("Criando usuário SuperAdmin inicial");
       }
       
       // Check if username or email already exists
