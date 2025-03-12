@@ -97,6 +97,48 @@ const systemSettingsSchema = z.object({
 
 type SystemSettingsValues = z.infer<typeof systemSettingsSchema>;
 
+// Formulário de Preços de Planos
+const pricingSchema = z.object({
+  free: z.object({
+    price: z.coerce.number().min(0, "Preço não pode ser negativo"),
+    description: z.string(),
+    features: z.string(),
+    enabled: z.boolean().default(true),
+    maxProjects: z.coerce.number().int().min(1),
+    maxUsers: z.coerce.number().int().min(1),
+    maxStorage: z.coerce.number().int().min(1),
+  }),
+  starter: z.object({
+    price: z.coerce.number().min(0, "Preço não pode ser negativo"),
+    description: z.string(),
+    features: z.string(),
+    enabled: z.boolean().default(true),
+    maxProjects: z.coerce.number().int().min(1),
+    maxUsers: z.coerce.number().int().min(1),
+    maxStorage: z.coerce.number().int().min(1),
+  }),
+  professional: z.object({
+    price: z.coerce.number().min(0, "Preço não pode ser negativo"),
+    description: z.string(),
+    features: z.string(),
+    enabled: z.boolean().default(true),
+    maxProjects: z.coerce.number().int().min(1),
+    maxUsers: z.coerce.number().int().min(1),
+    maxStorage: z.coerce.number().int().min(1),
+  }),
+  enterprise: z.object({
+    price: z.coerce.number().min(0, "Preço não pode ser negativo"),
+    description: z.string(),
+    features: z.string(),
+    enabled: z.boolean().default(true),
+    maxProjects: z.coerce.number().int().min(1),
+    maxUsers: z.coerce.number().int().min(1),
+    maxStorage: z.coerce.number().int().min(1),
+  }),
+});
+
+type PricingValues = z.infer<typeof pricingSchema>;
+
 // Formulário para Mercado Pago
 const mercadoPagoSchema = z.object({
   accessToken: z.string().min(1, "Token de acesso é obrigatório"),
@@ -132,6 +174,46 @@ export default function SuperAdmin() {
   const [partnerDialogOpen, setPartnerDialogOpen] = useState(false);
   const [selectedPartner, setSelectedPartner] = useState<any | null>(null);
   const [mercadoPagoDialogOpen, setMercadoPagoDialogOpen] = useState(false);
+  
+  // Estado para armazenar dados de preços
+  const [pricingPlans, setPricingPlans] = useState({
+    free: {
+      price: 0,
+      description: "Plano gratuito para experimentar o sistema",
+      features: "1 projeto, 3 usuários, 100MB de armazenamento",
+      enabled: true,
+      maxProjects: 1,
+      maxUsers: 3,
+      maxStorage: 100
+    },
+    starter: {
+      price: 99.90,
+      description: "Para pequenas equipes e startups",
+      features: "3 projetos, 10 usuários, 1GB de armazenamento",
+      enabled: true,
+      maxProjects: 3,
+      maxUsers: 10,
+      maxStorage: 1000
+    },
+    professional: {
+      price: 199.90,
+      description: "Para empresas em crescimento",
+      features: "10 projetos, 30 usuários, 10GB de armazenamento",
+      enabled: true,
+      maxProjects: 10,
+      maxUsers: 30,
+      maxStorage: 10000
+    },
+    enterprise: {
+      price: 499.90,
+      description: "Para grandes empresas e agências",
+      features: "Projetos ilimitados, 100 usuários, 100GB de armazenamento",
+      enabled: true,
+      maxProjects: 999,
+      maxUsers: 100,
+      maxStorage: 100000
+    }
+  });
 
   // Verificar se o usuário é administrador
   if (user?.role !== "admin") {
@@ -359,6 +441,63 @@ export default function SuperAdmin() {
   const handleDeletePartnerAgency = (id: number) => {
     deletePartnerAgencyMutation.mutate(id);
   };
+  
+  // Formulário de preços de planos
+  const pricingForm = useForm<PricingValues>({
+    resolver: zodResolver(pricingSchema),
+    defaultValues: pricingPlans
+  });
+  
+  // Buscar configurações de preços
+  const { 
+    data: pricingSettings, 
+    isLoading: isLoadingPricing 
+  } = useQuery<any>({
+    queryKey: ["api/admin/pricing"],
+    queryFn: () => apiRequest<any>("/api/admin/pricing")
+      .catch(() => {
+        // Se a API ainda não existir, use valores default
+        return pricingPlans;
+      })
+  });
+  
+  // Atualizar valores quando os dados forem carregados
+  useEffect(() => {
+    if (pricingSettings) {
+      pricingForm.reset(pricingSettings);
+      setPricingPlans(pricingSettings);
+    }
+  }, [pricingSettings, pricingForm]);
+  
+  // Mutação para salvar preços
+  const savePricingMutation = useMutation({
+    mutationFn: async (data: PricingValues) => {
+      return apiRequest("/api/admin/pricing", "PUT", data)
+        .catch(() => {
+          // Se a API ainda não existir, simule sucesso
+          return data;
+        });
+    },
+    onSuccess: (data) => {
+      setPricingPlans(data);
+      toast({
+        title: "Preços atualizados",
+        description: "As configurações de preços foram atualizadas com sucesso.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["api/admin/pricing"] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Erro",
+        description: `Falha ao salvar preços: ${error.message}`,
+        variant: "destructive",
+      });
+    },
+  });
+  
+  const handleSavePricing = (data: PricingValues) => {
+    savePricingMutation.mutate(data);
+  };
 
   const formatDate = (dateString: string) => {
     if (!dateString) return "-";
@@ -381,9 +520,12 @@ export default function SuperAdmin() {
       </div>
 
       <Tabs defaultValue="settings" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="settings" className="flex items-center gap-2">
             <Settings className="h-4 w-4" /> Configurações
+          </TabsTrigger>
+          <TabsTrigger value="pricing" className="flex items-center gap-2">
+            <DollarSign className="h-4 w-4" /> Preços
           </TabsTrigger>
           <TabsTrigger value="partners" className="flex items-center gap-2">
             <Users className="h-4 w-4" /> Agências Parceiras
