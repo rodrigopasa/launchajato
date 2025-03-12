@@ -10,6 +10,8 @@ import {
 import { useState } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { motion } from "framer-motion";
+import { transitions } from "@/lib/animations";
 
 interface TaskItemProps {
   id: number;
@@ -107,49 +109,84 @@ export default function TaskItem({
   };
 
   return (
-    <div 
-      className="flex items-center p-3 hover:bg-gray-50 rounded-lg transition-colors duration-150 ease-in-out cursor-pointer"
+    <motion.div 
+      className="flex items-center p-3 hover:bg-gray-50 rounded-lg cursor-pointer"
       onClick={() => onViewDetails && onViewDetails()}
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      whileHover={{ 
+        backgroundColor: "rgba(243, 244, 246, 1)", 
+        x: 3,
+        transition: { duration: 0.2 } 
+      }}
+      layout
+      transition={transitions.default}
     >
-      <div className="flex-shrink-0 mr-3" onClick={(e) => e.stopPropagation()}>
+      <motion.div 
+        className="flex-shrink-0 mr-3" 
+        onClick={(e) => e.stopPropagation()}
+        whileTap={{ scale: 0.9 }}
+      >
         <Checkbox
           checked={isCompleted}
           onCheckedChange={handleCheckboxChange}
           className="h-5 w-5"
         />
-      </div>
+      </motion.div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center justify-between">
-          <p
+          <motion.p
             className={cn(
               "text-sm font-medium truncate",
               isCompleted ? "line-through text-gray-400" : "text-gray-900"
             )}
+            animate={{ 
+              opacity: isCompleted ? 0.6 : 1,
+              textDecoration: isCompleted ? "line-through" : "none"
+            }}
+            transition={{ duration: 0.3 }}
           >
             {name}
-          </p>
-          <span
+          </motion.p>
+          <motion.span
             className={cn(
               "inline-flex items-center px-2 py-0.5 rounded text-xs font-medium",
               priorityData.bg,
               priorityData.color
             )}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            transition={transitions.quick}
           >
             {priorityData.label}
-          </span>
+          </motion.span>
         </div>
-        <div className="flex items-center mt-1">
+        <motion.div 
+          className="flex items-center mt-1"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.1 }}
+        >
           <p className="text-xs text-gray-500 truncate">{project}</p>
           <span className="mx-1 text-gray-300">•</span>
           <p className="text-xs text-gray-500">{formatDueDate(dueDate)}</p>
-        </div>
+        </motion.div>
       </div>
-      <div className="flex-shrink-0 ml-3" onClick={(e) => e.stopPropagation()}>
+      <motion.div 
+        className="flex-shrink-0 ml-3" 
+        onClick={(e) => e.stopPropagation()}
+        whileHover={{ scale: 1.1 }}
+        whileTap={{ scale: 0.9 }}
+      >
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <button className="text-gray-400 hover:text-gray-600 focus:outline-none">
+            <motion.button 
+              className="text-gray-400 hover:text-gray-600 focus:outline-none"
+              whileHover={{ rotate: 15 }}
+              transition={transitions.quick}
+            >
               <MoreVertical className="h-4 w-4" />
-            </button>
+            </motion.button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             {onViewDetails && <DropdownMenuItem onClick={onViewDetails}>Ver detalhes</DropdownMenuItem>}
@@ -164,7 +201,7 @@ export default function TaskItem({
             )}
           </DropdownMenuContent>
         </DropdownMenu>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }
