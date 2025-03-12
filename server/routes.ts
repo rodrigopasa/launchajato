@@ -28,6 +28,81 @@ import MemoryStore from "memorystore";
 const MemoryStoreSession = MemoryStore(session);
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Rota para criar uma nova organização
+  app.post("/api/organizations", async (req: Request, res: Response) => {
+    try {
+      const {
+        name
+      } = req.body;
+
+      if (!name) {
+        return res.status(400).json({ message: "Nome da organização é obrigatório" });
+      }
+
+      const organization = await storage.createOrganization({
+        name,
+        createdAt: new Date(),
+      });
+
+      // Criar configurações para a organização
+      await storage.createOrganizationSettings({
+        organizationId: organization.id,
+        theme: {
+          primary: "#0ea5e9",
+          variant: "professional",
+          appearance: "light",
+          radius: 0.5
+        },
+        logo: null,
+        features: {
+          taskComments: true,
+          fileUploads: true,
+          chatbot: true,
+          reports: true
+        }
+      });
+
+      // Criar inscrição gratuita para a organização
+      await storage.createSubscription({
+        organizationId: organization.id,
+        plan: "free",
+        status: "active",
+        startDate: new Date(),
+        endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 dias
+        paymentMethod: null,
+        paymentId: null
+      });
+
+      return res.status(201).json(organization);
+    } catch (error) {
+      console.error("Erro ao criar organização:", error);
+      return res.status(500).json({ message: "Erro ao criar organização" });
+    }
+  });
+
+  // Rota para adicionar um membro à organização
+  app.post("/api/organizations/:id/members", async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      const { userId, role } = req.body;
+
+      if (!userId || !role) {
+        return res.status(400).json({ message: "ID do usuário e cargo são obrigatórios" });
+      }
+
+      const result = await storage.addOrganizationMember({
+        organizationId: parseInt(id),
+        userId,
+        role,
+        joinedAt: new Date()
+      });
+
+      return res.status(201).json(result);
+    } catch (error) {
+      console.error("Erro ao adicionar membro:", error);
+      return res.status(500).json({ message: "Erro ao adicionar membro à organização" });
+    }
+  });
   // Set up session middleware
   app.use(
     session({
@@ -81,7 +156,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(usersWithoutPasswords);
   });
 
-  app.post("/api/users", isAdmin, async (req: Request, res: Response) => {
+  app.post("/api/users", async (req: Request, res: Response) => {
+    // Se não for uma requisição de registro (sem organizationId e orgRole), exigir ser admin
+    if (!req.body.organizationId && !req.body.orgRole && 
+        (!res.locals.user || res.locals.user.role !== 'admin')) {
+      return res.status(403).json({ message: "Permissão negada" });
+    }
     try {
       const validatedData = insertUserSchema.parse(req.body);
       

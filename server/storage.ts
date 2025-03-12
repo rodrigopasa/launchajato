@@ -1,16 +1,42 @@
 import {
   users, projects, projectMembers, phases, 
   tasks, checklistItems, files, activities, comments, integrations,
+  organizations, organizationSettings, subscriptions, organizationMembers,
   type User, type InsertUser, type Project, type InsertProject,
   type ProjectMember, type InsertProjectMember, type Phase, type InsertPhase,
   type Task, type InsertTask, type ChecklistItem, type InsertChecklistItem,
   type File, type InsertFile, type Activity, type InsertActivity,
-  type Comment, type InsertComment, type Integration, type InsertIntegration
+  type Comment, type InsertComment, type Integration, type InsertIntegration,
+  type Organization, type InsertOrganization, 
+  type OrganizationSettings, type InsertOrganizationSettings,
+  type Subscription, type InsertSubscription,
+  type OrganizationMember, type InsertOrganizationMember
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, inArray } from "drizzle-orm";
 
 export interface IStorage {
+  // Organizações
+  createOrganization(org: InsertOrganization): Promise<Organization>;
+  getOrganization(id: number): Promise<Organization | undefined>;
+  updateOrganization(id: number, data: Partial<InsertOrganization>): Promise<Organization | undefined>;
+  
+  // Configurações de Organização
+  createOrganizationSettings(settings: InsertOrganizationSettings): Promise<OrganizationSettings>;
+  getOrganizationSettings(organizationId: number): Promise<OrganizationSettings | undefined>;
+  updateOrganizationSettings(organizationId: number, data: Partial<InsertOrganizationSettings>): Promise<OrganizationSettings | undefined>;
+  
+  // Assinaturas
+  createSubscription(subscription: InsertSubscription): Promise<Subscription>;
+  getSubscription(organizationId: number): Promise<Subscription | undefined>;
+  updateSubscription(id: number, data: Partial<InsertSubscription>): Promise<Subscription | undefined>;
+  
+  // Membros da Organização
+  addOrganizationMember(member: InsertOrganizationMember): Promise<OrganizationMember>;
+  getOrganizationMembers(organizationId: number): Promise<OrganizationMember[]>;
+  removeOrganizationMember(organizationId: number, userId: number): Promise<boolean>;
+  updateOrganizationMemberRole(organizationId: number, userId: number, role: string): Promise<boolean>;
+  
   // Users
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
@@ -81,6 +107,10 @@ export interface IStorage {
 }
 
 export class MemStorage implements IStorage {
+  private organizations: Map<number, Organization>;
+  private organizationSettings: Map<number, OrganizationSettings>;
+  private subscriptions: Map<number, Subscription>;
+  private organizationMembers: Map<number, OrganizationMember>;
   private users: Map<number, User>;
   private projects: Map<number, Project>;
   private projectMembers: Map<number, ProjectMember>;
@@ -92,6 +122,10 @@ export class MemStorage implements IStorage {
   private comments: Map<number, Comment>;
   private integrations: Map<number, Integration>;
   
+  private organizationIdCounter: number;
+  private organizationSettingsIdCounter: number;
+  private subscriptionIdCounter: number;
+  private organizationMemberIdCounter: number;
   private userIdCounter: number;
   private projectIdCounter: number;
   private memberIdCounter: number;
@@ -104,6 +138,10 @@ export class MemStorage implements IStorage {
   private integrationIdCounter: number;
 
   constructor() {
+    this.organizations = new Map();
+    this.organizationSettings = new Map();
+    this.subscriptions = new Map();
+    this.organizationMembers = new Map();
     this.users = new Map();
     this.projects = new Map();
     this.projectMembers = new Map();
@@ -115,6 +153,10 @@ export class MemStorage implements IStorage {
     this.comments = new Map();
     this.integrations = new Map();
     
+    this.organizationIdCounter = 1;
+    this.organizationSettingsIdCounter = 1;
+    this.subscriptionIdCounter = 1;
+    this.organizationMemberIdCounter = 1;
     this.userIdCounter = 1;
     this.projectIdCounter = 1;
     this.memberIdCounter = 1;
@@ -135,6 +177,139 @@ export class MemStorage implements IStorage {
       role: "admin",
       avatar: ""
     });
+  }
+  
+  // Organization methods
+  async createOrganization(insertOrg: InsertOrganization): Promise<Organization> {
+    const now = new Date();
+    const id = this.organizationIdCounter++;
+    const org: Organization = { 
+      ...insertOrg, 
+      id, 
+      createdAt: now,
+      updatedAt: now,
+    };
+    this.organizations.set(id, org);
+    return org;
+  }
+  
+  async getOrganization(id: number): Promise<Organization | undefined> {
+    return this.organizations.get(id);
+  }
+  
+  async updateOrganization(id: number, data: Partial<InsertOrganization>): Promise<Organization | undefined> {
+    const org = this.organizations.get(id);
+    if (!org) return undefined;
+    
+    const updatedOrg = { 
+      ...org, 
+      ...data, 
+      updatedAt: new Date() 
+    };
+    this.organizations.set(id, updatedOrg);
+    return updatedOrg;
+  }
+  
+  // Organization Settings methods
+  async createOrganizationSettings(insertSettings: InsertOrganizationSettings): Promise<OrganizationSettings> {
+    const id = this.organizationSettingsIdCounter++;
+    const settings: OrganizationSettings = { 
+      ...insertSettings, 
+      id,
+      updatedAt: new Date()
+    };
+    this.organizationSettings.set(insertSettings.organizationId, settings);
+    return settings;
+  }
+  
+  async getOrganizationSettings(organizationId: number): Promise<OrganizationSettings | undefined> {
+    return Array.from(this.organizationSettings.values())
+      .find(setting => setting.organizationId === organizationId);
+  }
+  
+  async updateOrganizationSettings(
+    organizationId: number, 
+    data: Partial<InsertOrganizationSettings>
+  ): Promise<OrganizationSettings | undefined> {
+    const settings = await this.getOrganizationSettings(organizationId);
+    if (!settings) return undefined;
+    
+    const updatedSettings = { 
+      ...settings, 
+      ...data, 
+      updatedAt: new Date() 
+    };
+    this.organizationSettings.set(settings.id, updatedSettings);
+    return updatedSettings;
+  }
+  
+  // Subscription methods
+  async createSubscription(insertSubscription: InsertSubscription): Promise<Subscription> {
+    const now = new Date();
+    const id = this.subscriptionIdCounter++;
+    const subscription: Subscription = { 
+      ...insertSubscription, 
+      id, 
+      createdAt: now, 
+      updatedAt: now 
+    };
+    this.subscriptions.set(insertSubscription.organizationId, subscription);
+    return subscription;
+  }
+  
+  async getSubscription(organizationId: number): Promise<Subscription | undefined> {
+    return Array.from(this.subscriptions.values())
+      .find(sub => sub.organizationId === organizationId);
+  }
+  
+  async updateSubscription(id: number, data: Partial<InsertSubscription>): Promise<Subscription | undefined> {
+    const subscription = this.subscriptions.get(id);
+    if (!subscription) return undefined;
+    
+    const updatedSubscription = { 
+      ...subscription, 
+      ...data, 
+      updatedAt: new Date() 
+    };
+    this.subscriptions.set(id, updatedSubscription);
+    return updatedSubscription;
+  }
+  
+  // Organization Members methods
+  async addOrganizationMember(insertMember: InsertOrganizationMember): Promise<OrganizationMember> {
+    const now = new Date();
+    const id = this.organizationMemberIdCounter++;
+    const member: OrganizationMember = { 
+      ...insertMember, 
+      id, 
+      addedAt: now 
+    };
+    this.organizationMembers.set(id, member);
+    return member;
+  }
+  
+  async getOrganizationMembers(organizationId: number): Promise<OrganizationMember[]> {
+    return Array.from(this.organizationMembers.values())
+      .filter(member => member.organizationId === organizationId);
+  }
+  
+  async removeOrganizationMember(organizationId: number, userId: number): Promise<boolean> {
+    const memberEntry = Array.from(this.organizationMembers.entries())
+      .find(([_, member]) => member.organizationId === organizationId && member.userId === userId);
+    
+    if (!memberEntry) return false;
+    return this.organizationMembers.delete(memberEntry[0]);
+  }
+  
+  async updateOrganizationMemberRole(organizationId: number, userId: number, role: string): Promise<boolean> {
+    const memberEntry = Array.from(this.organizationMembers.entries())
+      .find(([_, member]) => member.organizationId === organizationId && member.userId === userId);
+    
+    if (!memberEntry) return false;
+    
+    const [id, member] = memberEntry;
+    this.organizationMembers.set(id, { ...member, role: role as any });
+    return true;
   }
 
   // User methods
