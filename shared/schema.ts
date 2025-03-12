@@ -75,6 +75,11 @@ export const users = pgTable("users", {
   role: roleEnum("role").notNull().default('member'),
   profession: professionEnum("profession").default('other'),
   avatar: text("avatar"),
+  
+  // Campos do Stripe
+  stripeCustomerId: text("stripe_customer_id"),
+  stripeSubscriptionId: text("stripe_subscription_id"),
+  
   createdAt: timestamp("created_at").defaultNow(),
 });
 

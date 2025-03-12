@@ -1,5 +1,14 @@
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
+import Stripe from "stripe";
+
+if (!process.env.STRIPE_SECRET_KEY) {
+  throw new Error('Missing required Stripe secret: STRIPE_SECRET_KEY');
+}
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+  apiVersion: '2023-10-16',
+});
 import { storage } from "./storage";
 import session from "express-session";
 import { isAuthenticated, isAdmin, isProjectMember, hasProjectRole } from "./middleware/auth";
@@ -8,7 +17,6 @@ import { z } from "zod";
 import fs from "fs";
 import path from "path";
 import { validateRequest } from "./middleware/validation";
-import Stripe from "stripe";
 import { 
   insertUserSchema, 
   insertProjectSchema, 
@@ -1825,6 +1833,134 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }
   
   console.log("Sistema de chatbot WhatsApp inicializado");
+
+    // Stripe Routes
+  app.post("/api/create-payment-intent", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const { amount } = req.body;
+      
+      if (!amount) {
+        return res.status(400).json({ message: "Amount is required" });
+      }
+
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: Math.round(amount * 100), // Convert to cents
+        currency: "usd",
+        metadata: {
+          userId: res.locals.user.id
+        }
+      });
+
+      res.json({ clientSecret: paymentIntent.client_secret });
+    } catch (error: any) {
+      console.error("Error creating payment intent:", error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.post("/api/get-or-create-subscription", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const user = res.locals.user;
+      
+      if (!user.email) {
+        throw new Error('No user email on file');
+      }
+      
+      // Verificar se o usuário já tem um customer ID
+      let customerId = user.stripeCustomerId;
+      
+      if (!customerId) {
+        // Criar um novo customer se não existir
+        const customer = await stripe.customers.create({
+          email: user.email,
+          name: user.name,
+        });
+        
+        customerId = customer.id;
+        await storage.updateUser(user.id, { stripeCustomerId: customer.id });
+      }
+      
+      // Verificar se o usuário já tem uma assinatura
+      if (user.stripeSubscriptionId) {
+        const subscription = await stripe.subscriptions.retrieve(user.stripeSubscriptionId);
+        
+        if (subscription.status === "active") {
+          return res.send({
+            subscriptionId: subscription.id,
+            clientSecret: undefined // Já está ativa, não precisa de pagamento
+          });
+        }
+      }
+      
+      // Criar uma nova assinatura
+      const subscription = await stripe.subscriptions.create({
+        customer: customerId,
+        items: [{
+          price: process.env.STRIPE_PRICE_ID,
+        }],
+        payment_behavior: 'default_incomplete',
+        expand: ['latest_invoice.payment_intent'],
+      });
+      
+      await storage.updateUser(user.id, { 
+        stripeCustomerId: customerId,
+        stripeSubscriptionId: subscription.id
+      });
+
+      res.send({
+        subscriptionId: subscription.id,
+        clientSecret: (subscription.latest_invoice as any)?.payment_intent?.client_secret,
+      });
+    } catch (error: any) {
+      console.error("Error setting up subscription:", error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Webhook para processar eventos do Stripe
+  app.post("/api/stripe-webhook", async (req: Request, res: Response) => {
+    let event: Stripe.Event;
+
+    try {
+      event = stripe.webhooks.constructEvent(
+        req.body,
+        req.headers['stripe-signature'] as string,
+        process.env.STRIPE_WEBHOOK_SECRET as string
+      );
+    } catch (err: any) {
+      console.error("Webhook signature verification failed:", err.message);
+      return res.status(400).send(`Webhook Error: ${err.message}`);
+    }
+
+    try {
+      // Handle the event
+      switch (event.type) {
+        case 'payment_intent.succeeded':
+          const paymentIntent = event.data.object as Stripe.PaymentIntent;
+          // Atualizar o status do pagamento no banco de dados
+          if (paymentIntent.metadata.userId) {
+            // Implementar lógica de atualização do status do pagamento
+          }
+          break;
+          
+        case 'customer.subscription.created':
+        case 'customer.subscription.updated':
+        case 'customer.subscription.deleted':
+          const subscription = event.data.object as Stripe.Subscription;
+          // Atualizar o status da assinatura no banco de dados
+          // Implementar lógica de atualização do status da assinatura
+          break;
+          
+        default:
+          console.log(`Unhandled event type ${event.type}`);
+      }
+
+      res.json({ received: true });
+    } catch (err: any) {
+      console.error("Error processing webhook:", err);
+      res.status(500).send(`Webhook Error: ${err.message}`);
+    }
+  });
 
   const httpServer = createServer(app);
   return httpServer;
