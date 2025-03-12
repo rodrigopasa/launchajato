@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { useNavigate } from "wouter";
+import { useLocation } from "wouter";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -128,7 +128,7 @@ type PartnerAgencyValues = z.infer<typeof partnerAgencySchema>;
 export default function SuperAdmin() {
   const { user } = useAuth();
   const { toast } = useToast();
-  const navigate = useNavigate();
+  const [, navigate] = useLocation();
   const [partnerDialogOpen, setPartnerDialogOpen] = useState(false);
   const [selectedPartner, setSelectedPartner] = useState<any | null>(null);
   const [mercadoPagoDialogOpen, setMercadoPagoDialogOpen] = useState(false);
@@ -145,7 +145,7 @@ export default function SuperAdmin() {
     isLoading: isLoadingSettings 
   } = useQuery({
     queryKey: ["api/admin/settings"],
-    queryFn: () => apiRequest<SystemSettingsValues>("/api/admin/settings")
+    queryFn: () => apiRequest("/api/admin/settings")
   });
 
   // Buscar configuração do Mercado Pago
@@ -184,11 +184,11 @@ export default function SuperAdmin() {
   });
 
   // Atualizar valores quando os dados forem carregados
-  React.useEffect(() => {
+  useEffect(() => {
     if (systemSettings) {
       systemSettingsForm.reset(systemSettings);
     }
-  }, [systemSettings]);
+  }, [systemSettings, systemSettingsForm]);
 
   // Formulário do Mercado Pago
   const mercadoPagoForm = useForm<MercadoPagoValues>({
@@ -204,11 +204,11 @@ export default function SuperAdmin() {
   });
 
   // Atualizar valores quando os dados forem carregados
-  React.useEffect(() => {
+  useEffect(() => {
     if (mercadoPagoSettings) {
       mercadoPagoForm.reset(mercadoPagoSettings);
     }
-  }, [mercadoPagoSettings]);
+  }, [mercadoPagoSettings, mercadoPagoForm]);
 
   // Formulário de agência parceira
   const partnerAgencyForm = useForm<PartnerAgencyValues>({
@@ -227,7 +227,7 @@ export default function SuperAdmin() {
   });
 
   // Atualizar valores quando uma agência for selecionada para edição
-  React.useEffect(() => {
+  useEffect(() => {
     if (selectedPartner) {
       // Converter datas de string para Date
       const trialStartDate = selectedPartner.trialStartDate ? new Date(selectedPartner.trialStartDate) : new Date();
@@ -251,7 +251,7 @@ export default function SuperAdmin() {
         notes: ""
       });
     }
-  }, [selectedPartner]);
+  }, [selectedPartner, partnerAgencyForm]);
 
   // Mutação para salvar configurações do sistema
   const saveSettingsMutation = useMutation({
