@@ -65,7 +65,7 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
     queryKey: ['/api/settings'],
     queryFn: async () => {
       try {
-        return await apiRequest('/api/settings');
+        return await apiRequest("GET", '/api/settings');
       } catch (error) {
         return defaultSettings;
       }
