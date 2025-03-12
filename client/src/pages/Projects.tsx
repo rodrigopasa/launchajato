@@ -49,8 +49,7 @@ export default function Projects() {
   // Create project mutation
   const createProjectMutation = useMutation({
     mutationFn: async (data: ProjectFormValues) => {
-      const response = await apiRequest("POST", "/api/projects", data);
-      return response.json();
+      return await apiRequest("POST", "/api/projects", data);
     },
     onSuccess: () => {
       setIsNewProjectDialogOpen(false);
@@ -72,8 +71,7 @@ export default function Projects() {
   // Update project mutation
   const updateProjectMutation = useMutation({
     mutationFn: async ({ id, data }: { id: number; data: ProjectFormValues }) => {
-      const response = await apiRequest("PUT", `/api/projects/${id}`, data);
-      return response.json();
+      return await apiRequest("PUT", `/api/projects/${id}`, data);
     },
     onSuccess: () => {
       setProjectToEdit(null);
@@ -95,8 +93,7 @@ export default function Projects() {
   // Delete project mutation
   const deleteProjectMutation = useMutation({
     mutationFn: async (id: number) => {
-      const response = await apiRequest("DELETE", `/api/projects/${id}`, undefined);
-      return response.json();
+      return await apiRequest("DELETE", `/api/projects/${id}`, undefined);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
