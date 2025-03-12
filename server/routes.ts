@@ -1748,8 +1748,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const agency = await storage.createPartnerAgency(mappedData);
       console.log("Agência criada com sucesso:", agency);
       
-      // Criar usuário admin para a agência, se credenciais forem fornecidas
-      if (body.username && body.password) {
+      // Criar usuário admin para a agência, credenciais são obrigatórias
+      // devido à validação no formulário do front-end
+      if (!body.username || !body.password) {
+        return res.status(400).json({ message: "Nome de usuário e senha são obrigatórios para criar uma agência parceira" });
+      }
+      
+      try {
         const userData = {
           username: body.username,
           password: body.password,
@@ -1762,6 +1767,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         const user = await storage.createUser(userData);
         console.log("Usuário da agência criado com sucesso:", user);
+      } catch (userError) {
+        // Se falhar ao criar o usuário, exclui a agência para manter consistência
+        await storage.deletePartnerAgency(agency.id);
+        console.error("Erro ao criar usuário da agência:", userError);
+        return res.status(500).json({ 
+          message: `Erro ao criar usuário da agência: ${(userError as Error).message}` 
+        });
       }
       
       return res.status(201).json(agency);
@@ -1826,8 +1838,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Agência parceira não encontrada" });
       }
       
-      // Atualizar usuário associado à agência, se credenciais forem fornecidas
-      if (body.username) {
+      // Verificar o usuário da agência
+      // O nome de usuário é sempre obrigatório devido à validação no front-end
+      if (!body.username) {
+        return res.status(400).json({ message: "Nome de usuário é obrigatório para atualizar a agência parceira" });
+      }
+      
+      try {
         // Buscar usuários associados à agência
         const users = await storage.getAllUsers(); // Idealmente deveria ser getUsersByPartnerAgencyId
         const agencyUser = users.find(user => user.partnerAgencyId === agencyId);
@@ -1841,14 +1858,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
           };
           
           // Atualizar senha apenas se uma nova senha for fornecida
-          if (body.password) {
+          if (body.password && body.password.length > 0) {
             userData.password = body.password;
           }
           
           await storage.updateUser(agencyUser.id, userData);
           console.log("Usuário da agência atualizado com sucesso");
-        } else if (body.password) {
-          // Criar novo usuário se não existe
+        } else {
+          // Se não existe usuário para essa agência, devemos criar um
+          // Para isso, uma senha é obrigatória
+          if (!body.password || body.password.length === 0) {
+            return res.status(400).json({ 
+              message: "Senha é obrigatória para criar o usuário administrador da agência"
+            });
+          }
+          
+          // Criar novo usuário pois não existe
           const userData = {
             username: body.username,
             password: body.password,
@@ -1862,6 +1887,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const user = await storage.createUser(userData);
           console.log("Usuário da agência criado com sucesso:", user);
         }
+      } catch (userError) {
+        console.error("Erro ao gerenciar usuário da agência:", userError);
+        return res.status(500).json({ 
+          message: `Erro ao atualizar/criar usuário da agência: ${(userError as Error).message}` 
+        });
       }
       
       console.log("Agência atualizada com sucesso:", agency);

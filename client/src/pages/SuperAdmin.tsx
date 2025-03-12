@@ -180,13 +180,18 @@ const partnerAgencySchema = z.object({
   maxOrganizations: z.coerce.number().int().min(1).default(1),
   status: z.enum(["active", "suspended", "expired"]).default("active"),
   notes: z.string().optional(),
-  // Campos de autenticação
+  // Campos de autenticação - obrigatórios para garantir que cada agência tenha um usuário
   username: z.string().min(3, "Nome de usuário deve ter pelo menos 3 caracteres"),
   // Senha é obrigatória apenas para novas agências
   password: z.union([
     z.string().min(6, "Senha deve ter pelo menos 6 caracteres"),
     z.string().length(0) // Permite string vazia para edição
-  ]),
+  ]).superRefine((val, ctx) => {
+    // A validação que depende do estado selectedPartner será feita no handler do formulário
+    // Isso evita acessar o estado do componente antes de sua definição
+    if (!ctx.path.includes("password")) return;
+    // Não fazemos validação adicional aqui, pois será feita durante o envio do formulário
+  }),
 });
 
 type PartnerAgencyValues = z.infer<typeof partnerAgencySchema>;
@@ -546,6 +551,16 @@ export default function SuperAdmin() {
   });
 
   const handleSavePartnerAgency = (data: PartnerAgencyValues) => {
+    // Validação adicional: senha é obrigatória apenas para novas agências
+    if (!selectedPartner && (!data.password || data.password.length === 0)) {
+      toast({
+        title: "Validação",
+        description: "Senha é obrigatória para criação de uma nova agência",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     savePartnerAgencyMutation.mutate(data);
   };
 
