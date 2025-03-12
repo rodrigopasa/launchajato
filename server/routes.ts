@@ -1923,13 +1923,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Criar novo usuário pois não existe
           const userData = {
             username: body.username,
-            password: body.password,
+            password: body.password, // Será hash
             name: `Admin ${body.name}`,
             email: body.email,
             role: "admin",
             avatar: null,
             partnerAgencyId: agencyId
           };
+          
+          // Hash da senha antes de salvar
+          try {
+            const { hashPassword } = await import('./auth-utils');
+            userData.password = await hashPassword(userData.password);
+          } catch (hashError) {
+            console.error("Erro ao realizar hash da senha:", hashError);
+            return res.status(500).json({ message: "Erro interno ao processar senha" });
+          }
           
           const user = await storage.createUser(userData);
           console.log("Usuário da agência criado com sucesso:", user);
