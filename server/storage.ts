@@ -1772,6 +1772,205 @@ export class DatabaseStorage implements IStorage {
       .where(eq(partnerAgencies.id, id));
     return true;
   }
+
+  // Budget Categories methods
+  async getBudgetCategory(id: number): Promise<BudgetCategory | undefined> {
+    const [category] = await db.select()
+      .from(budgetCategories)
+      .where(eq(budgetCategories.id, id));
+    return category;
+  }
+  
+  async getBudgetCategoriesByProject(projectId: number): Promise<BudgetCategory[]> {
+    return db.select()
+      .from(budgetCategories)
+      .where(eq(budgetCategories.projectId, projectId))
+      .orderBy(budgetCategories.name);
+  }
+  
+  async createBudgetCategory(insertCategory: InsertBudgetCategory): Promise<BudgetCategory> {
+    const [category] = await db
+      .insert(budgetCategories)
+      .values(insertCategory)
+      .returning();
+    return category;
+  }
+  
+  async updateBudgetCategory(id: number, data: Partial<InsertBudgetCategory>): Promise<BudgetCategory | undefined> {
+    const [updatedCategory] = await db
+      .update(budgetCategories)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(budgetCategories.id, id))
+      .returning();
+    return updatedCategory;
+  }
+  
+  async deleteBudgetCategory(id: number): Promise<boolean> {
+    await db.delete(budgetCategories).where(eq(budgetCategories.id, id));
+    return true;
+  }
+  
+  // Expenses methods
+  async getExpense(id: number): Promise<Expense | undefined> {
+    const [expense] = await db.select()
+      .from(expenses)
+      .where(eq(expenses.id, id));
+    return expense;
+  }
+  
+  async getExpensesByProject(projectId: number): Promise<Expense[]> {
+    return db.select()
+      .from(expenses)
+      .where(eq(expenses.projectId, projectId))
+      .orderBy(desc(expenses.createdAt));
+  }
+  
+  async getExpensesByCategory(categoryId: number): Promise<Expense[]> {
+    return db.select()
+      .from(expenses)
+      .where(eq(expenses.categoryId, categoryId))
+      .orderBy(desc(expenses.createdAt));
+  }
+  
+  async createExpense(insertExpense: InsertExpense): Promise<Expense> {
+    const [expense] = await db
+      .insert(expenses)
+      .values({
+        ...insertExpense,
+        status: insertExpense.status || "planned"
+      })
+      .returning();
+    return expense;
+  }
+  
+  async updateExpense(id: number, data: Partial<InsertExpense>): Promise<Expense | undefined> {
+    const [updatedExpense] = await db
+      .update(expenses)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(expenses.id, id))
+      .returning();
+    return updatedExpense;
+  }
+  
+  async deleteExpense(id: number): Promise<boolean> {
+    await db.delete(expenses).where(eq(expenses.id, id));
+    return true;
+  }
+  
+  async approveExpense(id: number, userId: number): Promise<Expense | undefined> {
+    const [updatedExpense] = await db
+      .update(expenses)
+      .set({ 
+        status: "approved", 
+        approvedBy: userId,
+        approvedAt: new Date(),
+        updatedAt: new Date() 
+      })
+      .where(eq(expenses.id, id))
+      .returning();
+    return updatedExpense;
+  }
+  
+  // Budget Forecasts methods
+  async getBudgetForecast(id: number): Promise<BudgetForecast | undefined> {
+    const [forecast] = await db.select()
+      .from(budgetForecasts)
+      .where(eq(budgetForecasts.id, id));
+    return forecast;
+  }
+  
+  async getBudgetForecastsByProject(projectId: number): Promise<BudgetForecast[]> {
+    return db.select()
+      .from(budgetForecasts)
+      .where(eq(budgetForecasts.projectId, projectId))
+      .orderBy(budgetForecasts.period);
+  }
+  
+  async createBudgetForecast(insertForecast: InsertBudgetForecast): Promise<BudgetForecast> {
+    const [forecast] = await db
+      .insert(budgetForecasts)
+      .values(insertForecast)
+      .returning();
+    return forecast;
+  }
+  
+  async updateBudgetForecast(id: number, data: Partial<InsertBudgetForecast>): Promise<BudgetForecast | undefined> {
+    const [updatedForecast] = await db
+      .update(budgetForecasts)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(budgetForecasts.id, id))
+      .returning();
+    return updatedForecast;
+  }
+  
+  async deleteBudgetForecast(id: number): Promise<boolean> {
+    await db.delete(budgetForecasts).where(eq(budgetForecasts.id, id));
+    return true;
+  }
+  
+  // Budget Analysis
+  async getProjectBudgetSummary(projectId: number): Promise<{
+    totalBudget: number;
+    plannedAmount: number;
+    actualAmount: number;
+    remainingBudget: number;
+    categorySummary: {
+      categoryId: number;
+      name: string;
+      plannedAmount: number;
+      actualAmount: number;
+      variance: number;
+    }[];
+  }> {
+    // Obter projeto
+    const [project] = await db.select()
+      .from(projects)
+      .where(eq(projects.id, projectId));
+    
+    if (!project) {
+      throw new Error("Project not found");
+    }
+    
+    const totalBudget = project.budget || 0;
+    
+    // Obter despesas e categorias
+    const projectExpenses = await this.getExpensesByProject(projectId);
+    const projectCategories = await this.getBudgetCategoriesByProject(projectId);
+    
+    // Calcular despesas planejadas e reais
+    const plannedExpenses = projectExpenses.filter(e => e.status === "planned" || e.status === "approved");
+    const paidExpenses = projectExpenses.filter(e => e.status === "paid");
+    
+    const plannedAmount = plannedExpenses.reduce((sum, e) => sum + (e.amount || 0), 0);
+    const actualAmount = paidExpenses.reduce((sum, e) => sum + (e.amount || 0), 0);
+    const remainingBudget = totalBudget - actualAmount;
+    
+    // Calcular despesas por categoria
+    const categorySummary = projectCategories.map(category => {
+      const categoryPlannedExpenses = plannedExpenses.filter(e => e.categoryId === category.id);
+      const categoryPaidExpenses = paidExpenses.filter(e => e.categoryId === category.id);
+      
+      const plannedAmount = categoryPlannedExpenses.reduce((sum, e) => sum + (e.amount || 0), 0);
+      const actualAmount = categoryPaidExpenses.reduce((sum, e) => sum + (e.amount || 0), 0);
+      const variance = plannedAmount - actualAmount;
+      
+      return {
+        categoryId: category.id,
+        name: category.name,
+        plannedAmount,
+        actualAmount,
+        variance
+      };
+    });
+    
+    return {
+      totalBudget,
+      plannedAmount,
+      actualAmount,
+      remainingBudget,
+      categorySummary
+    };
+  }
 }
 
 // Para desenvolvimento, é possível alternar entre armazenamento em memória ou banco de dados
