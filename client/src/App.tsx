@@ -102,7 +102,7 @@ function AppRoutes() {
       </AnimatePresence>
     );
   }
-  
+
   // Renderizar páginas protegidas
   return (
     <MainLayout>
