@@ -19,6 +19,7 @@ import {
   MessagesSquare,
   Link2,
   Search,
+  Shield,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
