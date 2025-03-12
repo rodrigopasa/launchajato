@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
+import { useLocation } from "wouter";
 
 interface User {
   id: number;
@@ -32,6 +33,7 @@ export const useAuth = () => useContext(AuthContext);
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const { toast } = useToast();
+  const [_, setLocation] = useLocation();
 
   // Fetch current user
   const { data, isLoading } = useQuery<User | null>({
@@ -123,6 +125,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     onSuccess: () => {
       // Limpar o estado do usuário independentemente da resposta do servidor
       setUser(null);
+      // Redirecionar para a página inicial
+      setLocation("/");
       toast({
         title: "Logout realizado",
         description: "Você foi desconectado com sucesso",
@@ -131,6 +135,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     onError: (error: Error) => {
       // Mesmo com erro, desconectar o usuário localmente
       setUser(null);
+      // Redirecionar para a página inicial mesmo em caso de erro
+      setLocation("/");
       
       console.error("Erro durante logout:", error);
       toast({
