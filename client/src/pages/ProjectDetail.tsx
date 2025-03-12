@@ -619,7 +619,7 @@ export default function ProjectDetail() {
                       dueDate={task.dueDate || new Date().toISOString()}
                       completed={task.status === "completed"}
                       onStatusChange={handleTaskStatusChange}
-                      onViewDetails={() => window.location.href = `/tasks/${task.id}`}
+                      onViewDetails={() => setLocation(`/tasks/${task.id}`)}
                       onEdit={() => {
                         // Implementaremos isso depois
                       }}
