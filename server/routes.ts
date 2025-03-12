@@ -1575,6 +1575,78 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(500).json({ message: "Erro ao atualizar configurações" });
     }
   });
+  
+  // Configurações de preços
+  app.get("/api/admin/settings/pricing", isSuperAdmin, async (req: Request, res: Response) => {
+    try {
+      // Buscar configurações de preços do banco ou retornar padrões
+      const pricingSettings = {
+        freePlan: await storage.getAdminSetting('pricing_free_plan'),
+        starterPlan: await storage.getAdminSetting('pricing_starter_plan'),
+        proPlan: await storage.getAdminSetting('pricing_pro_plan'),
+        enterprisePlan: await storage.getAdminSetting('pricing_enterprise_plan')
+      };
+      
+      // Valores padrão se não existirem configurações
+      return res.json({
+        freePlan: pricingSettings.freePlan?.settingValue || {
+          price: 0,
+          features: ['1 projeto', '3 usuários', '1GB de armazenamento'],
+          enabled: true
+        },
+        starterPlan: pricingSettings.starterPlan?.settingValue || {
+          price: 29.90,
+          features: ['5 projetos', '10 usuários', '5GB de armazenamento'],
+          enabled: true
+        },
+        proPlan: pricingSettings.proPlan?.settingValue || {
+          price: 79.90,
+          features: ['20 projetos', 'Usuários ilimitados', '20GB de armazenamento'],
+          enabled: true
+        },
+        enterprisePlan: pricingSettings.enterprisePlan?.settingValue || {
+          price: 199.90,
+          features: ['Projetos ilimitados', 'Usuários ilimitados', 'Armazenamento ilimitado', 'API dedicada'],
+          enabled: true
+        }
+      });
+    } catch (error) {
+      console.error("Erro ao buscar configurações de preços:", error);
+      return res.status(500).json({ message: "Erro ao buscar configurações de preços" });
+    }
+  });
+
+  app.put("/api/admin/settings/pricing", isSuperAdmin, async (req: Request, res: Response) => {
+    try {
+      const { freePlan, starterPlan, proPlan, enterprisePlan } = req.body;
+      
+      // Atualizar cada plano no banco de dados
+      if (freePlan) {
+        await storage.updateAdminSetting('pricing_free_plan', freePlan);
+      }
+      
+      if (starterPlan) {
+        await storage.updateAdminSetting('pricing_starter_plan', starterPlan);
+      }
+      
+      if (proPlan) {
+        await storage.updateAdminSetting('pricing_pro_plan', proPlan);
+      }
+      
+      if (enterprisePlan) {
+        await storage.updateAdminSetting('pricing_enterprise_plan', enterprisePlan);
+      }
+      
+      return res.json({
+        success: true,
+        message: "Configurações de preços atualizadas com sucesso",
+        data: { freePlan, starterPlan, proPlan, enterprisePlan }
+      });
+    } catch (error) {
+      console.error("Erro ao atualizar configurações de preços:", error);
+      return res.status(500).json({ message: "Erro ao atualizar configurações de preços" });
+    }
+  });
 
   // Agências parceiras
   app.get("/api/admin/partner-agencies", isSuperAdmin, async (req: Request, res: Response) => {
