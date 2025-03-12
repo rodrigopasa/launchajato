@@ -543,7 +543,7 @@ export default function SuperAdmin() {
   // Mutação para remover agência parceira
   const deletePartnerAgencyMutation = useMutation({
     mutationFn: async (id: number) => {
-      return apiRequest(`/api/admin/partner-agencies/${id}`, "DELETE");
+      return apiRequest("DELETE", `/api/admin/partner-agencies/${id}`);
     },
     onSuccess: () => {
       toast({
@@ -595,7 +595,7 @@ export default function SuperAdmin() {
   // Mutação para salvar preços
   const savePricingMutation = useMutation({
     mutationFn: async (data: PricingValues) => {
-      return apiRequest("/api/admin/pricing", "PUT", data)
+      return apiRequest("PUT", "/api/admin/pricing", data)
         .catch(() => {
           // Se a API ainda não existir, simule sucesso
           return data;
