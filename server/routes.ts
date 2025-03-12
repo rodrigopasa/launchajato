@@ -180,13 +180,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.post("/api/users", async (req: Request, res: Response) => {
-    // Se não for uma requisição de registro (sem organizationId e orgRole), exigir ser admin
-    if (!req.body.organizationId && !req.body.orgRole && 
-        (!res.locals.user || res.locals.user.role !== 'admin')) {
-      return res.status(403).json({ message: "Permissão negada" });
-    }
     try {
+      // Verificar se é o primeiro usuário do sistema (permitir criação do superadmin)
+      const allUsers = await storage.getAllUsers();
+      const hasAdmin = allUsers.some(user => user.role === 'admin');
+      
+      // Se já existem admins e o usuário não está autenticado como admin, verificar permissão
+      if (hasAdmin && 
+          (!req.body.organizationId && !req.body.orgRole) && 
+          (!res.locals.user || res.locals.user.role !== 'admin')) {
+        return res.status(403).json({ message: "Permissão negada" });
+      }
+      
+      // Permitir criação do primeiro usuário como admin
       const validatedData = insertUserSchema.parse(req.body);
+      
+      // Se for o primeiro usuário, forçar role como admin
+      if (!hasAdmin && !validatedData.partnerAgencyId) {
+        validatedData.role = 'admin';
+      }
       
       // Check if username or email already exists
       const existingUsername = await storage.getUserByUsername(validatedData.username);
@@ -208,6 +220,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Dados inválidos", errors: error.errors });
       }
+      console.error("Erro ao criar usuário:", error);
       res.status(500).json({ message: "Erro ao criar usuário" });
     }
   });
