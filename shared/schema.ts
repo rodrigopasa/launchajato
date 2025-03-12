@@ -77,6 +77,7 @@ export const users = pgTable("users", {
   role: roleEnum("role").notNull().default('member'),
   profession: professionEnum("profession").default('other'),
   avatar: text("avatar"),
+  partnerAgencyId: integer("partner_agency_id").references(() => partnerAgencies.id),
   
   // Campos do Stripe
   stripeCustomerId: text("stripe_customer_id"),
@@ -424,6 +425,7 @@ export const insertUserSchema = createInsertSchema(users).pick({
   role: true,
   profession: true,
   avatar: true,
+  partnerAgencyId: true,
 });
 
 export const insertOrganizationMemberSchema = createInsertSchema(organizationMembers).pick({

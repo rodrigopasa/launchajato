@@ -1695,13 +1695,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log("Recebidos dados de agência:", body);
       
+      // Verificar se username já existe
+      if (body.username) {
+        const existingUser = await storage.getUserByUsername(body.username);
+        if (existingUser) {
+          return res.status(400).json({ message: "Nome de usuário já está em uso" });
+        }
+      }
+      
       // Mapear campos do frontend para o modelo de dados esperado pelo schema
       const mappedData = {
         name: body.name,
         contactName: body.contactName,
         email: body.email,
         phone: body.phone || null,
-        accessLevel: body.partnerLevel || 'trial',
+        accessLevel: body.accessLevel || 'trial',
         trialStartDate: body.trialStartDate || new Date(),
         trialEndDate: body.trialEndDate || null,
         maxOrganizations: body.maxOrganizations || 1,
@@ -1715,6 +1723,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Criar agência com os dados mapeados corretamente
       const agency = await storage.createPartnerAgency(mappedData);
       console.log("Agência criada com sucesso:", agency);
+      
+      // Criar usuário admin para a agência, se credenciais forem fornecidas
+      if (body.username && body.password) {
+        const userData = {
+          username: body.username,
+          password: body.password,
+          name: `Admin ${body.name}`,
+          email: body.email,
+          role: "admin",  // admin da agência, não superadmin
+          avatar: null,
+          partnerAgencyId: agency.id  // Associar usuário à agência parceira
+        };
+        
+        const user = await storage.createUser(userData);
+        console.log("Usuário da agência criado com sucesso:", user);
+      }
       
       return res.status(201).json(agency);
     } catch (error) {
@@ -1738,13 +1762,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log("Recebidos dados para atualização de agência:", body);
       
+      // Verificar se username já existe (se for um username diferente do atual)
+      if (body.username) {
+        // Buscar usuários associados à agência
+        const users = await storage.getAllUsers(); // Idealmente deveria ser getUsersByPartnerAgencyId
+        const agencyUser = users.find(user => user.partnerAgencyId === agencyId);
+        
+        if (agencyUser && agencyUser.username !== body.username) {
+          const existingUser = await storage.getUserByUsername(body.username);
+          if (existingUser && existingUser.id !== agencyUser.id) {
+            return res.status(400).json({ message: "Nome de usuário já está em uso" });
+          }
+        }
+      }
+      
       // Mapear campos do frontend para o modelo de dados esperado pelo schema
       const mappedData = {
         name: body.name,
         contactName: body.contactName,
         email: body.email,
         phone: body.phone || null,
-        accessLevel: body.partnerLevel || 'trial',
+        accessLevel: body.accessLevel || 'trial',
         trialStartDate: body.trialStartDate || new Date(),
         trialEndDate: body.trialEndDate || null,
         maxOrganizations: body.maxOrganizations || 1,
@@ -1757,6 +1795,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const agency = await storage.updatePartnerAgency(agencyId, mappedData);
       if (!agency) {
         return res.status(404).json({ message: "Agência parceira não encontrada" });
+      }
+      
+      // Atualizar usuário associado à agência, se credenciais forem fornecidas
+      if (body.username) {
+        // Buscar usuários associados à agência
+        const users = await storage.getAllUsers(); // Idealmente deveria ser getUsersByPartnerAgencyId
+        const agencyUser = users.find(user => user.partnerAgencyId === agencyId);
+        
+        if (agencyUser) {
+          // Atualizar usuário existente
+          const userData: any = {
+            username: body.username,
+            name: `Admin ${body.name}`,
+            email: body.email
+          };
+          
+          // Atualizar senha apenas se uma nova senha for fornecida
+          if (body.password) {
+            userData.password = body.password;
+          }
+          
+          await storage.updateUser(agencyUser.id, userData);
+          console.log("Usuário da agência atualizado com sucesso");
+        } else if (body.password) {
+          // Criar novo usuário se não existe
+          const userData = {
+            username: body.username,
+            password: body.password,
+            name: `Admin ${body.name}`,
+            email: body.email,
+            role: "admin",
+            avatar: null,
+            partnerAgencyId: agencyId
+          };
+          
+          const user = await storage.createUser(userData);
+          console.log("Usuário da agência criado com sucesso:", user);
+        }
       }
       
       console.log("Agência atualizada com sucesso:", agency);
