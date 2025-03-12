@@ -17,7 +17,10 @@ import Reports from "@/pages/Reports";
 import ChatbotSettings from "@/pages/ChatbotSettings";
 import Integrations from "@/pages/Integrations";
 import Search from "@/pages/Search";
-import { AuthProvider } from "./contexts/AuthContext";
+import LandingPage from "@/pages/LandingPage";
+import Login from "@/pages/Login";
+import Register from "@/pages/Register";
+import { useAuth, AuthProvider } from "./contexts/AuthContext";
 import { SidebarProvider } from "./contexts/SidebarContext";
 import { SettingsProvider } from "./contexts/SettingsContext";
 import { AnimatePresence, motion } from "framer-motion";
@@ -37,14 +40,64 @@ function PageTransition({ children }: { children: React.ReactNode }) {
   );
 }
 
-function Router() {
-  const [location] = useLocation();
+function AppRoutes() {
+  const [location, setLocation] = useLocation();
+  const { isAuthenticated, isLoading } = useAuth();
+
+  // Se estiver carregando, não faz nada ainda
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-slate-900 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  // Redirecionamento baseado na autenticação
+  if (isAuthenticated && (location === "/" || location === "/login" || location === "/register")) {
+    setLocation("/dashboard");
+    return null;
+  }
+
+  if (!isAuthenticated && 
+      location !== "/" && 
+      location !== "/login" && 
+      location !== "/register") {
+    setLocation("/login");
+    return null;
+  }
+
+  // Renderizar páginas públicas
+  if (location === "/" || location === "/login" || location === "/register") {
+    return (
+      <AnimatePresence mode="wait">
+        <Switch location={location} key={location}>
+          <Route path="/">
+            <PageTransition>
+              <LandingPage />
+            </PageTransition>
+          </Route>
+          <Route path="/login">
+            <PageTransition>
+              <Login />
+            </PageTransition>
+          </Route>
+          <Route path="/register">
+            <PageTransition>
+              <Register />
+            </PageTransition>
+          </Route>
+        </Switch>
+      </AnimatePresence>
+    );
+  }
   
+  // Renderizar páginas protegidas
   return (
     <MainLayout>
       <AnimatePresence mode="wait">
         <Switch location={location} key={location}>
-          <Route path="/">
+          <Route path="/dashboard">
             <PageTransition>
               <Dashboard />
             </PageTransition>
@@ -126,7 +179,7 @@ function App() {
       <AuthProvider>
         <SettingsProvider>
           <SidebarProvider>
-            <Router />
+            <AppRoutes />
             <Toaster />
           </SidebarProvider>
         </SettingsProvider>
