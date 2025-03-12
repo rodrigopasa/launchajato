@@ -2,6 +2,7 @@ import {
   users, projects, projectMembers, phases, 
   tasks, checklistItems, files, activities, comments, integrations,
   organizations, organizationSettings, subscriptions, organizationMembers,
+  paymentIntegrations, adminSettings, partnerAgencies,
   type User, type InsertUser, type Project, type InsertProject,
   type ProjectMember, type InsertProjectMember, type Phase, type InsertPhase,
   type Task, type InsertTask, type ChecklistItem, type InsertChecklistItem,
@@ -10,7 +11,10 @@ import {
   type Organization, type InsertOrganization, 
   type OrganizationSettings, type InsertOrganizationSettings,
   type Subscription, type InsertSubscription,
-  type OrganizationMember, type InsertOrganizationMember
+  type OrganizationMember, type InsertOrganizationMember,
+  type PaymentIntegration, type InsertPaymentIntegration,
+  type AdminSetting, type InsertAdminSetting,
+  type PartnerAgency, type InsertPartnerAgency
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, inArray } from "drizzle-orm";
@@ -1349,6 +1353,165 @@ export class DatabaseStorage implements IStorage {
   
   async deleteIntegration(id: number): Promise<boolean> {
     await db.delete(integrations).where(eq(integrations.id, id));
+    return true;
+  }
+
+  // Payment Integrations methods
+  async getPaymentIntegration(id: number): Promise<PaymentIntegration | undefined> {
+    const [integration] = await db
+      .select()
+      .from(paymentIntegrations)
+      .where(eq(paymentIntegrations.id, id));
+    return integration;
+  }
+
+  async getPaymentIntegrationByProvider(provider: string): Promise<PaymentIntegration | undefined> {
+    const [integration] = await db
+      .select()
+      .from(paymentIntegrations)
+      .where(eq(paymentIntegrations.provider, provider));
+    return integration;
+  }
+
+  async getAllPaymentIntegrations(): Promise<PaymentIntegration[]> {
+    return db.select().from(paymentIntegrations);
+  }
+
+  async createPaymentIntegration(insertIntegration: InsertPaymentIntegration): Promise<PaymentIntegration> {
+    const [integration] = await db
+      .insert(paymentIntegrations)
+      .values(insertIntegration)
+      .returning();
+    return integration;
+  }
+
+  async updatePaymentIntegration(id: number, data: Partial<InsertPaymentIntegration>): Promise<PaymentIntegration | undefined> {
+    const [updatedIntegration] = await db
+      .update(paymentIntegrations)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(paymentIntegrations.id, id))
+      .returning();
+    return updatedIntegration;
+  }
+
+  async deletePaymentIntegration(id: number): Promise<boolean> {
+    await db.delete(paymentIntegrations).where(eq(paymentIntegrations.id, id));
+    return true;
+  }
+
+  // Admin Settings methods
+  async getAdminSettings(): Promise<Record<string, any> | undefined> {
+    const settings = await db.select().from(adminSettings);
+    if (settings.length === 0) return undefined;
+    
+    // Convert settings array to record
+    const result: Record<string, any> = {};
+    for (const setting of settings) {
+      result[setting.settingKey] = setting.settingValue;
+    }
+    return result;
+  }
+
+  async getAdminSetting(key: string): Promise<AdminSetting | undefined> {
+    const [setting] = await db
+      .select()
+      .from(adminSettings)
+      .where(eq(adminSettings.settingKey, key));
+    return setting;
+  }
+
+  async createAdminSetting(insertSetting: InsertAdminSetting): Promise<AdminSetting> {
+    const [setting] = await db
+      .insert(adminSettings)
+      .values(insertSetting)
+      .returning();
+    return setting;
+  }
+
+  async updateAdminSetting(key: string, value: any): Promise<AdminSetting | undefined> {
+    // Verificar se a configuração existe
+    const existingSetting = await this.getAdminSetting(key);
+    
+    if (!existingSetting) {
+      // Criar nova configuração se não existir
+      return this.createAdminSetting({
+        settingKey: key,
+        settingValue: value,
+        description: '',
+        category: 'general'
+      });
+    }
+    
+    // Atualizar configuração existente
+    const [updatedSetting] = await db
+      .update(adminSettings)
+      .set({ 
+        settingValue: value,
+        updatedAt: new Date()
+      })
+      .where(eq(adminSettings.settingKey, key))
+      .returning();
+    
+    return updatedSetting;
+  }
+
+  async updateAdminSettings(settings: Record<string, any>): Promise<Record<string, any>> {
+    // Atualizar ou criar cada configuração
+    for (const [key, value] of Object.entries(settings)) {
+      await this.updateAdminSetting(key, value);
+    }
+    return settings;
+  }
+
+  async deleteAdminSetting(key: string): Promise<boolean> {
+    await db
+      .delete(adminSettings)
+      .where(eq(adminSettings.settingKey, key));
+    return true;
+  }
+
+  // Partner Agencies methods
+  async getPartnerAgency(id: number): Promise<PartnerAgency | undefined> {
+    const [agency] = await db
+      .select()
+      .from(partnerAgencies)
+      .where(eq(partnerAgencies.id, id));
+    return agency;
+  }
+
+  async getPartnerAgencyByEmail(email: string): Promise<PartnerAgency | undefined> {
+    const [agency] = await db
+      .select()
+      .from(partnerAgencies)
+      .where(eq(partnerAgencies.email, email));
+    return agency;
+  }
+
+  async getAllPartnerAgencies(): Promise<PartnerAgency[]> {
+    return db.select().from(partnerAgencies);
+  }
+
+  async createPartnerAgency(insertAgency: InsertPartnerAgency): Promise<PartnerAgency> {
+    const [agency] = await db
+      .insert(partnerAgencies)
+      .values(insertAgency)
+      .returning();
+    return agency;
+  }
+
+  async updatePartnerAgency(id: number, data: Partial<InsertPartnerAgency>): Promise<PartnerAgency | undefined> {
+    const [updatedAgency] = await db
+      .update(partnerAgencies)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(partnerAgencies.id, id))
+      .returning();
+    return updatedAgency;
+  }
+
+  async deletePartnerAgency(id: number): Promise<boolean> {
+    await db
+      .delete(partnerAgencies)
+      .where(eq(partnerAgencies.id, id));
     return true;
   }
 }
