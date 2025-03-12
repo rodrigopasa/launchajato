@@ -155,7 +155,7 @@ export default function Register() {
       });
 
       // Em seguida, criar o usuário admin
-      await apiRequest<any>("POST", "/api/users", {
+      const userData = await apiRequest<any>("POST", "/api/users", {
         name: data.name,
         email: data.email,
         phone: data.phone,
@@ -166,13 +166,30 @@ export default function Register() {
         orgRole: "owner"
       });
 
-      toast({
-        title: "Conta criada com sucesso!",
-        description: "Você já pode fazer login no sistema.",
-      });
-
-      // Redirecionar para página de login
-      setLocation("/login");
+      // Fazer login automaticamente
+      try {
+        await apiRequest<any>("POST", "/api/auth/login", {
+          username: data.username,
+          password: data.password
+        });
+        
+        toast({
+          title: "Conta criada com sucesso!",
+          description: "Você foi logado automaticamente."
+        });
+        
+        // Redirecionar para dashboard
+        setLocation("/dashboard");
+      } catch (loginError) {
+        console.error("Erro ao fazer login automático:", loginError);
+        toast({
+          title: "Conta criada com sucesso!",
+          description: "Você já pode fazer login no sistema.",
+        });
+        
+        // Redirecionar para página de login
+        setLocation("/login");
+      }
     } catch (error) {
       console.error(error);
       toast({
