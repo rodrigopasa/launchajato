@@ -128,12 +128,22 @@ export default function Register() {
     }
   };
 
-  const onSubmit = async (data: FormValues) => {
+  // Função separada para lidar com o botão "Próximo"
+  const handleNext = async () => {
+    console.log("Tentando avançar para próxima etapa:", currentStep);
     if (currentStep < 3) {
       const isValid = await validateStep();
+      console.log("Validação etapa atual:", isValid);
       if (isValid) {
         setCurrentStep(currentStep + 1);
       }
+    }
+  };
+
+  const onSubmit = async (data: FormValues) => {
+    console.log("Formulário enviado:", currentStep);
+    if (currentStep < 3) {
+      handleNext();
       return;
     }
 
@@ -400,25 +410,34 @@ export default function Register() {
                     </Button>
                   </Link>
                 )}
-                <Button
-                  type="submit"
-                  className="bg-gradient-to-r from-primary to-purple-500 hover:from-primary/80 hover:to-purple-400 w-full sm:w-auto"
-                  disabled={isLoading}
-                >
-                  {isLoading ? (
-                    <span className="flex items-center gap-2">
-                      <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
-                      </svg>
-                      Processando...
-                    </span>
-                  ) : currentStep < 3 ? (
-                    "Próximo"
-                  ) : (
-                    "Criar Conta"
-                  )}
-                </Button>
+                
+                {currentStep < 3 ? (
+                  <Button
+                    type="button"
+                    onClick={handleNext}
+                    className="bg-gradient-to-r from-primary to-purple-500 hover:from-primary/80 hover:to-purple-400 w-full sm:w-auto"
+                  >
+                    Próximo
+                  </Button>
+                ) : (
+                  <Button
+                    type="submit"
+                    className="bg-gradient-to-r from-primary to-purple-500 hover:from-primary/80 hover:to-purple-400 w-full sm:w-auto"
+                    disabled={isLoading}
+                  >
+                    {isLoading ? (
+                      <span className="flex items-center gap-2">
+                        <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                        </svg>
+                        Processando...
+                      </span>
+                    ) : (
+                      "Criar Conta"
+                    )}
+                  </Button>
+                )}
               </div>
             </form>
           </Form>
