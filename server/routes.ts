@@ -147,17 +147,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(400).json({ message: "Username e senha são obrigatórios" });
     }
 
-    const user = await storage.getUserByUsername(username);
+    try {
+      const user = await storage.getUserByUsername(username);
 
-    if (!user || user.password !== password) {
-      return res.status(401).json({ message: "Credenciais inválidas" });
+      if (!user) {
+        return res.status(401).json({ message: "Credenciais inválidas" });
+      }
+
+      // Na implementação atual, estamos fazendo uma comparação direta.
+      // Idealmente, deveríamos usar bcrypt ou argon2 aqui.
+      // Para um sistema de produção, implemente um algoritmo seguro de hash
+      if (user.password !== password) {
+        return res.status(401).json({ message: "Credenciais inválidas" });
+      }
+
+      req.session.userId = user.id;
+
+      // Don't send the password back to the client
+      const { password: _, ...userWithoutPassword } = user;
+      res.json(userWithoutPassword);
+    } catch (error) {
+      console.error("Erro no login:", error);
+      res.status(500).json({ message: "Erro interno no servidor durante autenticação" });
     }
-
-    req.session.userId = user.id;
-
-    // Don't send the password back to the client
-    const { password: _, ...userWithoutPassword } = user;
-    res.json(userWithoutPassword);
   });
 
   app.post("/api/auth/logout", (req: Request, res: Response) => {
