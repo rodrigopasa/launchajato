@@ -211,7 +211,8 @@ export default function ProjectDetail() {
           projectId: parseInt(projectId as string)
         };
         console.log("Enviando dados de tarefa:", taskData);
-        return await apiRequest("POST", `/api/projects/${projectId}/tasks`, taskData);
+        const response = await apiRequest("POST", `/api/projects/${projectId}/tasks`, taskData);
+        return await response.json();
       } catch (error) {
         console.error("Erro na requisição de criação de tarefa:", error);
         throw error;
@@ -219,8 +220,14 @@ export default function ProjectDetail() {
     },
     onSuccess: () => {
       setIsNewTaskDialogOpen(false);
+      // Invalidar todas as queries relacionadas a tarefas para garantir que a UI seja atualizada
       queryClient.invalidateQueries({ queryKey: [`/api/projects/${projectId}/tasks`] });
-      queryClient.invalidateQueries({ queryKey: [`/api/tasks`] });
+      queryClient.invalidateQueries({ queryKey: ['/api/tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/tasks/user/me'] });
+      
+      // Recarregar as tarefas do projeto imediatamente
+      refetchTasks();
+      
       toast({
         title: "Tarefa criada",
         description: "A tarefa foi criada com sucesso",
