@@ -154,10 +154,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "Credenciais inválidas" });
       }
 
-      // Na implementação atual, estamos fazendo uma comparação direta.
-      // Idealmente, deveríamos usar bcrypt ou argon2 aqui.
-      // Para um sistema de produção, implemente um algoritmo seguro de hash
-      if (user.password !== password) {
+      // Importando as funções de verificação de senha
+      const { verifyPassword } = await import('./auth-utils');
+      
+      // Verifica a senha usando o método seguro
+      const passwordMatches = await verifyPassword(password, user.password);
+      if (!passwordMatches) {
         return res.status(401).json({ message: "Credenciais inválidas" });
       }
 
@@ -233,6 +235,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Email já está em uso" });
       }
       
+      // Hash da senha antes de salvar
+      try {
+        const { hashPassword } = await import('./auth-utils');
+        validatedData.password = await hashPassword(validatedData.password);
+      } catch (error) {
+        console.error("Erro ao realizar hash da senha:", error);
+        return res.status(500).json({ message: "Erro interno ao processar senha" });
+      }
+      
       const user = await storage.createUser(validatedData);
       
       // Remove password from response
@@ -261,6 +272,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (res.locals.user.role !== 'admin') {
         const { role, ...safeData } = updateData;
         updateData = safeData;
+      }
+      
+      // Se a senha estiver sendo atualizada, fazer o hash
+      if (updateData.password) {
+        try {
+          const { hashPassword } = await import('./auth-utils');
+          updateData.password = await hashPassword(updateData.password);
+        } catch (error) {
+          console.error("Erro ao realizar hash da senha:", error);
+          return res.status(500).json({ message: "Erro interno ao processar senha" });
+        }
       }
       
       const updatedUser = await storage.updateUser(userId, updateData);
@@ -1773,13 +1795,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       try {
         const userData = {
           username: body.username,
-          password: body.password,
+          password: body.password, // Será hash
           name: `Admin ${body.name}`,
           email: body.email,
           role: "admin",  // admin da agência, não superadmin
           avatar: null,
           partnerAgencyId: agency.id  // Associar usuário à agência parceira
         };
+        
+        // Hash da senha antes de salvar
+        try {
+          const { hashPassword } = await import('./auth-utils');
+          userData.password = await hashPassword(userData.password);
+        } catch (hashError) {
+          console.error("Erro ao realizar hash da senha:", hashError);
+          return res.status(500).json({ message: "Erro interno ao processar senha" });
+        }
         
         const user = await storage.createUser(userData);
         console.log("Usuário da agência criado com sucesso:", user);
