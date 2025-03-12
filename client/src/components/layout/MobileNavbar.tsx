@@ -1,12 +1,13 @@
 
 import { useAuth } from "@/contexts/AuthContext";
 import { useSidebar } from "@/contexts/SidebarContext";
-import { Menu, Bell, X, Home, LayoutPanelLeft, CheckSquare, LogOut } from "lucide-react";
+import { Menu, X, Home, LayoutPanelLeft, CheckSquare, LogOut } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link, useLocation } from "wouter";
 import { transitions } from "@/lib/animations";
+import NotificationCenter from "@/components/notifications/NotificationCenter";
 
 export default function MobileNavbar() {
   const { user, logout } = useAuth();
@@ -48,20 +49,9 @@ export default function MobileNavbar() {
           <h1 className="text-xl font-semibold">LaunchRocket</h1>
         </div>
         <div className="flex items-center">
-          <motion.button 
-            className="text-gray-400 hover:text-white mr-4 relative p-2 rounded-md transition-colors" 
-            aria-label="Notificações"
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-          >
-            <Bell className="h-5 w-5" />
-            <motion.span 
-              className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full"
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={transitions.spring}
-            ></motion.span>
-          </motion.button>
+          <div className="text-white mr-2">
+            <NotificationCenter />
+          </div>
           {user && (
             <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }}>
               <Avatar className="border-2 border-gray-700">
