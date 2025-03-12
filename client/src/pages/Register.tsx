@@ -150,12 +150,12 @@ export default function Register() {
     setIsLoading(true);
     try {
       // Primeiro, criar a organização
-      const orgData = await apiRequest<any>("/api/organizations", "POST", {
+      const orgData = await apiRequest<any>("POST", "/api/organizations", {
         name: data.organizationName,
       });
 
       // Em seguida, criar o usuário admin
-      await apiRequest<any>("/api/users", "POST", {
+      await apiRequest<any>("POST", "/api/users", {
         name: data.name,
         email: data.email,
         phone: data.phone,
