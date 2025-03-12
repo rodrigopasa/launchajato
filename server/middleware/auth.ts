@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { storage } from '../storage';
+import { User } from '@shared/schema';
 
 declare module 'express-session' {
   interface SessionData {
@@ -18,7 +19,8 @@ export const isAuthenticated = async (req: Request, res: Response, next: NextFun
     return res.status(401).json({ message: 'Usuário não encontrado' });
   }
   
-  res.locals.user = user;
+  req.user = user;
+  res.locals.user = user; // Mantendo res.locals por compatibilidade com código existente
   next();
 };
 
@@ -37,7 +39,8 @@ export const isAdmin = async (req: Request, res: Response, next: NextFunction) =
     return res.status(403).json({ message: 'Permissão negada' });
   }
   
-  res.locals.user = user;
+  req.user = user;
+  res.locals.user = user; // Mantendo res.locals por compatibilidade com código existente
   next();
 };
 
@@ -62,6 +65,7 @@ export const isProjectMember = async (req: Request, res: Response, next: NextFun
   
   // Admin users can access all projects
   if (user.role === 'admin') {
+    req.user = user;
     res.locals.user = user;
     res.locals.projectRole = 'admin';
     return next();
@@ -70,6 +74,7 @@ export const isProjectMember = async (req: Request, res: Response, next: NextFun
   // Check if user is the project creator
   const project = await storage.getProject(projectId);
   if (project && project.createdBy === user.id) {
+    req.user = user;
     res.locals.user = user;
     res.locals.projectRole = 'admin';
     return next();
@@ -83,6 +88,7 @@ export const isProjectMember = async (req: Request, res: Response, next: NextFun
     return res.status(403).json({ message: 'Você não é membro deste projeto' });
   }
   
+  req.user = user;
   res.locals.user = user;
   res.locals.projectRole = member.role;
   next();
