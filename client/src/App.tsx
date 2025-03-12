@@ -40,79 +40,77 @@ function Router() {
   const [location] = useLocation();
   
   return (
-    <SidebarProvider>
-      <MainLayout>
-        <AnimatePresence mode="wait">
-          <Switch location={location} key={location}>
-            <Route path="/">
-              <PageTransition>
-                <Dashboard />
-              </PageTransition>
-            </Route>
-            <Route path="/projects">
-              <PageTransition>
-                <Projects />
-              </PageTransition>
-            </Route>
-            <Route path="/projects/:id">
-              <PageTransition>
-                <ProjectDetail />
-              </PageTransition>
-            </Route>
-            <Route path="/tasks">
-              <PageTransition>
-                <Tasks />
-              </PageTransition>
-            </Route>
-            <Route path="/tasks/:id">
-              <PageTransition>
-                <TaskDetail />
-              </PageTransition>
-            </Route>
-            <Route path="/team">
-              <PageTransition>
-                <Team />
-              </PageTransition>
-            </Route>
-            <Route path="/files">
-              <PageTransition>
-                <Files />
-              </PageTransition>
-            </Route>
-            <Route path="/communication">
-              <PageTransition>
-                <Communication />
-              </PageTransition>
-            </Route>
-            <Route path="/reports">
-              <PageTransition>
-                <Reports />
-              </PageTransition>
-            </Route>
-            <Route path="/settings">
-              <PageTransition>
-                <Settings />
-              </PageTransition>
-            </Route>
-            <Route path="/chatbot">
-              <PageTransition>
-                <ChatbotSettings />
-              </PageTransition>
-            </Route>
-            <Route path="/integrations">
-              <PageTransition>
-                <Integrations />
-              </PageTransition>
-            </Route>
-            <Route>
-              <PageTransition>
-                <NotFound />
-              </PageTransition>
-            </Route>
-          </Switch>
-        </AnimatePresence>
-      </MainLayout>
-    </SidebarProvider>
+    <MainLayout>
+      <AnimatePresence mode="wait">
+        <Switch location={location} key={location}>
+          <Route path="/">
+            <PageTransition>
+              <Dashboard />
+            </PageTransition>
+          </Route>
+          <Route path="/projects">
+            <PageTransition>
+              <Projects />
+            </PageTransition>
+          </Route>
+          <Route path="/projects/:id">
+            <PageTransition>
+              <ProjectDetail />
+            </PageTransition>
+          </Route>
+          <Route path="/tasks">
+            <PageTransition>
+              <Tasks />
+            </PageTransition>
+          </Route>
+          <Route path="/tasks/:id">
+            <PageTransition>
+              <TaskDetail />
+            </PageTransition>
+          </Route>
+          <Route path="/team">
+            <PageTransition>
+              <Team />
+            </PageTransition>
+          </Route>
+          <Route path="/files">
+            <PageTransition>
+              <Files />
+            </PageTransition>
+          </Route>
+          <Route path="/communication">
+            <PageTransition>
+              <Communication />
+            </PageTransition>
+          </Route>
+          <Route path="/reports">
+            <PageTransition>
+              <Reports />
+            </PageTransition>
+          </Route>
+          <Route path="/settings">
+            <PageTransition>
+              <Settings />
+            </PageTransition>
+          </Route>
+          <Route path="/chatbot">
+            <PageTransition>
+              <ChatbotSettings />
+            </PageTransition>
+          </Route>
+          <Route path="/integrations">
+            <PageTransition>
+              <Integrations />
+            </PageTransition>
+          </Route>
+          <Route>
+            <PageTransition>
+              <NotFound />
+            </PageTransition>
+          </Route>
+        </Switch>
+      </AnimatePresence>
+    </MainLayout>
   );
 }
 
@@ -121,8 +119,10 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <SettingsProvider>
-          <Router />
-          <Toaster />
+          <SidebarProvider>
+            <Router />
+            <Toaster />
+          </SidebarProvider>
         </SettingsProvider>
       </AuthProvider>
     </QueryClientProvider>

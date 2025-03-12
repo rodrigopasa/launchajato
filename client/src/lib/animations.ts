@@ -21,6 +21,14 @@ export const transitions = {
     damping: 20
   },
   
+  // Transição de mola para elementos de UI móvel
+  spring: {
+    type: "spring",
+    stiffness: 400,
+    damping: 30,
+    mass: 1
+  },
+  
   // Transição mais longa para elementos importantes
   emphasis: {
     type: "tween",

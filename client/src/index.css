@@ -7,15 +7,16 @@
     @apply border-border;
   }
 
-  body {
+  html, body {
     @apply font-sans antialiased bg-background text-foreground;
+    height: 100%;
+    width: 100%;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
   }
-}
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
-@layer base {
+  
+  /* Remove duplicate declarations */
   :root {
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
@@ -106,45 +107,81 @@
   }
 }
 
-@layer base {
-  * {
-    @apply border-border;
-  }
-  body {
-    @apply bg-background text-foreground;
-  }
-}
-
 /* Mobile specific styles */
 @media (max-width: 768px) {
-  /* Add spacing for mobile navbar */
-  body {
-    padding-top: 4rem;
+  /* Main mobile styling */
+  #root {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
   }
-
+  
+  /* Fix mobile scrolling issues */
+  main {
+    -webkit-overflow-scrolling: touch;
+    position: relative;
+    z-index: 1;
+  }
+  
+  /* Prevent horizontal scrolling */
+  body {
+    overflow-x: hidden;
+    position: relative;
+  }
+  
   /* Improve touch targets on mobile */
   button, 
-  a, 
+  a[role="button"], 
+  input[type="submit"],
+  input[type="button"] {
+    min-height: 44px;
+    min-width: 44px;
+    padding: 0.5rem;
+  }
+
+  /* Better spacing for form controls */
   input, 
   select, 
   textarea {
-    @apply min-h-[44px] min-w-[44px];
+    font-size: 16px !important; /* Prevent iOS zoom */
   }
-
+  
   /* Adjust font sizes for mobile */
-  h1 {
-    @apply text-2xl;
+  h1 { @apply text-2xl font-bold; }
+  h2 { @apply text-xl font-semibold; }
+  h3 { @apply text-lg font-medium; }
+  
+  /* Improve table scrolling */
+  .table-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
   }
   
-  h2 {
-    @apply text-xl;
+  /* Adjust card layouts for smaller screens */
+  .card-grid {
+    @apply grid grid-cols-1;
   }
   
-  h3 {
-    @apply text-lg;
+  /* Fix mobile momentum scrolling */
+  .overflow-scroll, .overflow-auto, .overflow-y-auto, .overflow-x-auto {
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none; /* Hide scrollbar for Firefox */
   }
   
-  /* Add pull-to-refresh feeling */
+  /* Hide scrollbars on webkit browsers */
+  .overflow-scroll::-webkit-scrollbar, 
+  .overflow-auto::-webkit-scrollbar,
+  .overflow-y-auto::-webkit-scrollbar,
+  .overflow-x-auto::-webkit-scrollbar {
+    display: none;
+  }
+  
+  /* Add padding bottom for bottom navigation */
+  .pb-safe {
+    padding-bottom: calc(1rem + env(safe-area-inset-bottom));
+  }
+  
+  /* Add smooth pull-to-refresh effect */
   html, body {
     overscroll-behavior-y: contain;
   }
