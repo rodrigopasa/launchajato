@@ -56,7 +56,7 @@ export default function Dashboard() {
     data: activities,
     isLoading: activitiesLoading,
   } = useQuery({
-    queryKey: projects && projects[0] ? [`/api/projects/${projects[0].id}/activities`, { limit: 5 }] : ['/api/activities'],
+    queryKey: projects && projects.length > 0 ? [`/api/projects/${projects[0].id}/activities`, { limit: 5 }] : ['/api/activities'],
     enabled: !!user,
   });
 
