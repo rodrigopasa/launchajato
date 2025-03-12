@@ -34,7 +34,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const { toast } = useToast();
 
   // Fetch current user
-  const { data, isLoading, error } = useQuery<User | null>({
+  const { data, isLoading } = useQuery<User | null>({
     queryKey: ["/api/auth/me"],
     queryFn: async () => {
       try {
@@ -43,17 +43,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           credentials: "include"
         });
         if (!response.ok) {
-          if (response.status === 401) {
-            // Unauthorized
-            setUser(null);
-            return null;
-          }
-          throw new Error(`HTTP error! status: ${response.status}`);
+          return null;
         }
         const userData = await response.json();
         return userData as User;
       } catch (error) {
-        console.error("Error fetching user data:", error);
         return null;
       }
     },
@@ -64,11 +58,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     if (data) {
       setUser(data);
-    } else if (error) {
-      console.log("Erro na autenticação:", error);
-      setUser(null);
     }
-  }, [data, error]);
+  }, [data]);
 
   // Login mutation
   const loginMutation = useMutation<
