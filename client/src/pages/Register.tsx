@@ -83,43 +83,21 @@ export default function Register() {
     setIsLoading(true);
     try {
       // Primeiro, criar a organização
-      const orgResult = await apiRequest("/api/organizations", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          name: data.organizationName,
-        }),
-      } as RequestInit);
-
-      if (!orgResult.ok) {
-        throw new Error("Falha ao criar organização");
-      }
-
-      const orgData = await orgResult.json();
+      const orgData = await apiRequest<any>("/api/organizations", "POST", {
+        name: data.organizationName,
+      });
 
       // Em seguida, criar o usuário admin
-      const userResult = await apiRequest("/api/users", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          name: data.name,
-          email: data.email,
-          phone: data.phone,
-          username: data.username,
-          password: data.password,
-          role: "admin",
-          organizationId: orgData.id,
-          orgRole: "owner"
-        }),
-      } as RequestInit);
-
-      if (!userResult.ok) {
-        throw new Error("Falha ao criar usuário");
-      }
+      await apiRequest<any>("/api/users", "POST", {
+        name: data.name,
+        email: data.email,
+        phone: data.phone,
+        username: data.username,
+        password: data.password,
+        role: "admin",
+        organizationId: orgData.id,
+        orgRole: "owner"
+      });
 
       toast({
         title: "Conta criada com sucesso!",

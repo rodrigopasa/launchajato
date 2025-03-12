@@ -55,16 +55,15 @@ export default function Dashboard() {
   const {
     data: activities,
     isLoading: activitiesLoading,
-  } = useQuery({
-    queryKey: projects && projects.length > 0 ? [`/api/projects/${projects[0].id}/activities`, { limit: 5 }] : ['/api/activities'],
+  } = useQuery<any[]>({
+    queryKey: projects && Array.isArray(projects) && projects.length > 0 ? [`/api/projects/${projects[0].id}/activities`, { limit: 5 }] : ['/api/activities'],
     enabled: !!user,
   });
 
   // Create project mutation
   const createProjectMutation = useMutation({
     mutationFn: async (data: ProjectFormValues) => {
-      const response = await apiRequest("POST", "/api/projects", data);
-      return response.json();
+      return apiRequest<any>("/api/projects", "POST", data);
     },
     onSuccess: () => {
       setIsNewProjectDialogOpen(false);
@@ -86,8 +85,7 @@ export default function Dashboard() {
   // Update task status mutation
   const updateTaskMutation = useMutation({
     mutationFn: async ({ id, data }: { id: number; data: { status: string } }) => {
-      const response = await apiRequest("PUT", `/api/tasks/${id}`, data);
-      return response.json();
+      return apiRequest<any>(`/api/tasks/${id}`, "PUT", data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/tasks/user/me"] });

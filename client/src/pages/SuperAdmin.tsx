@@ -143,27 +143,27 @@ export default function SuperAdmin() {
   const { 
     data: systemSettings, 
     isLoading: isLoadingSettings 
-  } = useQuery({
+  } = useQuery<any>({
     queryKey: ["api/admin/settings"],
-    queryFn: () => apiRequest("/api/admin/settings")
+    queryFn: () => apiRequest<any>("/api/admin/settings")
   });
 
   // Buscar configuração do Mercado Pago
   const { 
     data: mercadoPagoSettings, 
     isLoading: isLoadingMercadoPago 
-  } = useQuery({
+  } = useQuery<any>({
     queryKey: ["api/admin/payment-integrations/mercado-pago"],
-    queryFn: () => apiRequest("/api/admin/payment-integrations/mercado-pago")
+    queryFn: () => apiRequest<any>("/api/admin/payment-integrations/mercado-pago")
   });
 
   // Buscar agências parceiras
   const { 
     data: partnerAgencies, 
     isLoading: isLoadingPartners 
-  } = useQuery({
+  } = useQuery<any[]>({
     queryKey: ["api/admin/partner-agencies"],
-    queryFn: () => apiRequest("/api/admin/partner-agencies")
+    queryFn: () => apiRequest<any[]>("/api/admin/partner-agencies")
   });
 
   // Formulário de configurações do sistema
