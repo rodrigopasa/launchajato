@@ -99,17 +99,29 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // Logout mutation
   const logoutMutation = useMutation<any, Error, void>({
     mutationFn: async () => {
-      const response = await fetch("/api/auth/logout", {
-        method: "POST",
-        credentials: "include"
-      });
-      if (!response.ok) {
-        const error = await response.text();
-        throw new Error(error || "Erro ao fazer logout");
+      try {
+        const response = await fetch("/api/auth/logout", {
+          method: "POST",
+          credentials: "include"
+        });
+        
+        // Mesmo que a resposta não seja OK, vamos desconectar o usuário localmente
+        if (!response.ok) {
+          console.warn("Erro na resposta do servidor durante logout:", response.status);
+          // Não lançar erro aqui, apenas retornar para que possamos limpar o estado
+          return null;
+        }
+        
+        // Tentar obter JSON apenas se a resposta estiver OK
+        return response.json().catch(() => null); // Se não for JSON válido, retornar null
+      } catch (err) {
+        console.error("Erro ao fazer logout:", err);
+        // Não lançar erro, apenas retornar para que possamos limpar o estado
+        return null;
       }
-      return response.json();
     },
     onSuccess: () => {
+      // Limpar o estado do usuário independentemente da resposta do servidor
       setUser(null);
       toast({
         title: "Logout realizado",
@@ -117,9 +129,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       });
     },
     onError: (error: Error) => {
+      // Mesmo com erro, desconectar o usuário localmente
+      setUser(null);
+      
+      console.error("Erro durante logout:", error);
       toast({
-        title: "Erro ao realizar logout",
-        description: error.message,
+        title: "Atenção",
+        description: "Você foi desconectado, mas houve um problema na comunicação com o servidor",
         variant: "destructive",
       });
     },

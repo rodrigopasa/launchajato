@@ -138,7 +138,7 @@ export default function ProjectDetail() {
   });
 
   // Fetch project tasks
-  const { data: tasks, isLoading: tasksLoading } = useQuery({
+  const { data: tasks, isLoading: tasksLoading, refetch: refetchTasks } = useQuery({
     queryKey: ['/api/projects/tasks', projectId],
     queryFn: () => apiRequest('GET', `/api/projects/${projectId}/tasks`),
     enabled: !isNaN(projectId) && projectId > 0,
