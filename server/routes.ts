@@ -187,9 +187,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log("Criando usuário. É o primeiro? ", isFirstUser);
       
-      // Se for o primeiro usuário, não precisa de verificação de permissão
+      // Verificar se este é um registro inicial de uma organização 
+      // (usuário admin sendo criado logo após a criação de uma organização)
+      const isOrgRegistration = req.body.orgRole === 'owner' && req.body.organizationId;
+      
+      // Se for o primeiro usuário ou se for o registro de uma organização, permitir admin
       // Caso contrário, verifica permissões
-      if (!isFirstUser && req.body.role === 'admin') {
+      if (!isFirstUser && !isOrgRegistration && req.body.role === 'admin') {
         // Só permitir criar admin se o usuário estiver autenticado como admin
         if (!req.user || req.user.role !== 'admin') {
           console.log("Tentativa de criar usuário admin sem permissão");
