@@ -280,7 +280,6 @@ export const insertUserSchema = createInsertSchema(users).pick({
   role: true,
   profession: true,
   avatar: true,
-  emailVerified: true,
 });
 
 export const insertOrganizationMemberSchema = createInsertSchema(organizationMembers).pick({
@@ -295,7 +294,6 @@ export const insertOrganizationMemberSchema = createInsertSchema(organizationMem
 });
 
 export const insertProjectSchema = createInsertSchema(projects).pick({
-  organizationId: true,
   name: true,
   description: true,
   status: true,
@@ -311,7 +309,6 @@ export const insertProjectMemberSchema = createInsertSchema(projectMembers).pick
   userId: true,
   role: true,
   profession: true,
-  addedBy: true,
 });
 
 export const insertPhaseSchema = createInsertSchema(phases).pick({
