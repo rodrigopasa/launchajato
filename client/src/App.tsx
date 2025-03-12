@@ -16,6 +16,7 @@ import Settings from "@/pages/Settings";
 import Reports from "@/pages/Reports";
 import ChatbotSettings from "@/pages/ChatbotSettings";
 import Integrations from "@/pages/Integrations";
+import Search from "@/pages/Search";
 import { AuthProvider } from "./contexts/AuthContext";
 import { SidebarProvider } from "./contexts/SidebarContext";
 import { SettingsProvider } from "./contexts/SettingsContext";
@@ -101,6 +102,11 @@ function Router() {
           <Route path="/integrations">
             <PageTransition>
               <Integrations />
+            </PageTransition>
+          </Route>
+          <Route path="/search">
+            <PageTransition>
+              <Search />
             </PageTransition>
           </Route>
           <Route>

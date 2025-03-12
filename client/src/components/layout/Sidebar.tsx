@@ -17,6 +17,7 @@ import {
   BarChart,
   MessagesSquare,
   Link2,
+  Search,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
@@ -167,6 +168,14 @@ export default function Sidebar() {
                 collapsed={collapsed}
               >
                 Relatórios
+              </NavItem>
+              <NavItem
+                href="/search"
+                icon={<Search className="h-5 w-5" />}
+                active={location.startsWith("/search")}
+                collapsed={collapsed}
+              >
+                Busca Avançada
               </NavItem>
               <NavItem
                 href="/settings"

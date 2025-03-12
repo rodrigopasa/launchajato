@@ -19,7 +19,7 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import TaskTags from "./TaskTags";
 
 const priorityOptions = [
@@ -86,22 +86,31 @@ export function TaskForm({ defaultValues, onSubmit, projectId, isLoading = false
   };
 
   // Fetch all projects
-  const { data: projects } = useQuery({
+  const { data: projectsData } = useQuery({
     queryKey: ["/api/projects"],
     enabled: true,
   });
+  
+  // Garantir que projects seja sempre um array, mesmo que a query ainda não tenha retornado
+  const projects = Array.isArray(projectsData) ? projectsData : [];
 
   // Fetch phases for the current project
-  const { data: phases } = useQuery({
+  const { data: phasesData } = useQuery({
     queryKey: [`/api/projects/${form.getValues().projectId}/phases`],
     enabled: !!form.getValues().projectId,
   });
+  
+  // Garantir que phases seja sempre um array, mesmo que a query ainda não tenha retornado
+  const phases = Array.isArray(phasesData) ? phasesData : [];
 
   // Fetch team members
-  const { data: users } = useQuery({
+  const { data: usersData } = useQuery({
     queryKey: ["/api/users"],
     enabled: true,
   });
+  
+  // Garantir que users seja sempre um array, mesmo que a query ainda não tenha retornado
+  const users = Array.isArray(usersData) ? usersData : [];
 
   return (
     <Form {...form}>
