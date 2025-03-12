@@ -74,8 +74,37 @@ type PartnerAgencyValues = z.infer<typeof partnerAgencySchema>;
 
 export default function SuperAdmin() {
   const { toast } = useToast();
+  const { user } = useAuth();
+  const [, navigate] = useLocation();
   const [activeTab, setActiveTab] = useState("system");
   const [secretsVisible, setSecretsVisible] = useState(false);
+  
+  // Verificar se o usuário tem permissão para acessar a área de superadmin
+  useEffect(() => {
+    if (!user) {
+      toast({
+        title: "Acesso negado",
+        description: "Você precisa estar autenticado para acessar esta página",
+        variant: "destructive"
+      });
+      navigate("/login");
+      return;
+    }
+    
+    if (user.role !== "admin" || user.username !== "admin") {
+      toast({
+        title: "Acesso restrito",
+        description: "Apenas o administrador principal tem acesso a esta área",
+        variant: "destructive"
+      });
+      navigate("/dashboard");
+    }
+  }, [user, navigate, toast]);
+  
+  // Se não tiver permissão, não renderizar o conteúdo
+  if (!user || user.role !== "admin" || user.username !== "admin") {
+    return null;
+  }
 
   // Buscar configurações do sistema - como a API ainda não existe, usamos dados mockados
   const { data: settings, isLoading: isLoadingSettings } = useQuery({

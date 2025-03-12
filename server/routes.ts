@@ -1546,22 +1546,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Rotas de Super Admin
-  // Verificação de permissão de super admin
-  const isSuperAdmin = (req: Request, res: Response, next: Function) => {
-    if (!req.session.userId) {
-      return res.status(401).json({ message: "Não autenticado" });
-    }
-
-    storage.getUser(req.session.userId).then(user => {
-      if (!user || user.role !== "admin") {
-        return res.status(403).json({ message: "Acesso negado: permissão de administrador necessária" });
-      }
-      next();
-    }).catch(error => {
-      console.error("Erro ao verificar permissões de admin:", error);
-      return res.status(500).json({ message: "Erro interno ao verificar permissões" });
-    });
-  };
+  // Importar o middleware de verificação de superadmin
+  import { isSuperAdmin } from "./middleware/superadmin";
 
   // Configurações do sistema
   app.get("/api/admin/settings", isSuperAdmin, async (req: Request, res: Response) => {
