@@ -9,6 +9,7 @@ import StatCard from "@/components/dashboard/StatCard";
 import ProjectCard from "@/components/dashboard/ProjectCard";
 import ActivityItem from "@/components/dashboard/ActivityItem";
 import TaskItem from "@/components/dashboard/TaskItem";
+import RocketAnimation from "@/components/dashboard/RocketAnimation";
 import { ProjectForm, type ProjectFormValues } from "@/components/projects/ProjectForm";
 import { Link } from "wouter";
 import { useState } from "react";
@@ -51,8 +52,8 @@ export default function Dashboard() {
     data: activities,
     isLoading: activitiesLoading,
   } = useQuery({
-    queryKey: projects?.[0] ? [`/api/projects/${projects[0].id}/activities`, { limit: 5 }] : null,
-    enabled: !!(projects && projects.length > 0),
+    queryKey: projects && projects[0] ? [`/api/projects/${projects[0].id}/activities`, { limit: 5 }] : ['/api/activities'],
+    enabled: !!user,
   });
 
   // Create project mutation
@@ -107,25 +108,30 @@ export default function Dashboard() {
     });
   };
 
+  // Coerção de tipos para evitar problemas de tipagem
+  const projectsArray = Array.isArray(projects) ? projects : [];
+  const tasksArray = Array.isArray(tasks) ? tasks : [];
+  const activitiesArray = Array.isArray(activities) ? activities : [];
+
   // Calculate stats
   const stats = {
-    activeProjects: projects?.filter((p: any) => p.status !== "completed").length || 0,
-    completedTasks: tasks?.filter((t: any) => t.status === "completed").length || 0,
-    pendingTasks: tasks?.filter((t: any) => t.status !== "completed").length || 0,
-    teamMembers: projects?.reduce((acc: number, project: any) => {
+    activeProjects: projectsArray.filter((p: any) => p.status !== "completed").length,
+    completedTasks: tasksArray.filter((t: any) => t.status === "completed").length,
+    pendingTasks: tasksArray.filter((t: any) => t.status !== "completed").length,
+    teamMembers: projectsArray.reduce((acc: number, project: any) => {
       // This is a placeholder as we don't have the actual team member count
       // In a real application, we'd fetch this data from the server
       return acc + (project.teamSize || 0);
-    }, 0) || 0,
+    }, 0),
   };
 
   // Filter active projects for display
-  const activeProjects = projects
-    ?.filter((p: any) => p.status !== "completed")
-    .slice(0, 3) || [];
+  const activeProjects = projectsArray
+    .filter((p: any) => p.status !== "completed")
+    .slice(0, 3);
 
   // Get upcoming tasks - non-completed tasks sorted by due date
-  const upcomingTasks = [...(tasks || [])]
+  const upcomingTasks = [...tasksArray]
     .filter((t: any) => t.status !== "completed")
     .sort((a: any, b: any) => {
       if (!a.dueDate) return 1;
@@ -137,18 +143,21 @@ export default function Dashboard() {
   return (
     <div className="py-6 px-4 md:px-8">
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-semibold text-gray-800">Dashboard</h2>
+        <h2 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-indigo-500">Dashboard</h2>
         <div className="flex">
           <Button variant="outline" size="sm" className="mr-2">
             <Filter className="h-4 w-4 mr-2" />
             Filtrar
           </Button>
-          <Button size="sm" onClick={() => setIsNewProjectDialogOpen(true)}>
+          <Button size="sm" onClick={() => setIsNewProjectDialogOpen(true)} className="bg-gradient-to-r from-primary to-indigo-500 hover:from-primary/90 hover:to-indigo-500/90 text-white shadow-lg shadow-primary/20">
             <Plus className="h-4 w-4 mr-2" />
             Novo Projeto
           </Button>
         </div>
       </div>
+      
+      {/* Banner animado do foguete */}
+      <RocketAnimation />
 
       {/* Dashboard Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
