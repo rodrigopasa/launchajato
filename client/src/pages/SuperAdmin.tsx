@@ -176,6 +176,9 @@ const partnerAgencySchema = z.object({
   maxOrganizations: z.coerce.number().int().min(1).default(1),
   status: z.enum(["active", "suspended", "expired"]).default("active"),
   notes: z.string().optional(),
+  // Campos de autenticação
+  username: z.string().min(3, "Nome de usuário deve ter pelo menos 3 caracteres"),
+  password: z.string().min(6, "Senha deve ter pelo menos 6 caracteres"),
 });
 
 type PartnerAgencyValues = z.infer<typeof partnerAgencySchema>;
@@ -360,7 +363,9 @@ export default function SuperAdmin() {
       trialStartDate: new Date(),
       maxOrganizations: 1,
       status: "active",
-      notes: ""
+      notes: "",
+      username: "",
+      password: ""
     },
   });
 
@@ -386,7 +391,9 @@ export default function SuperAdmin() {
         trialStartDate: new Date(),
         maxOrganizations: 1,
         status: "active",
-        notes: ""
+        notes: "",
+        username: "",
+        password: ""
       });
     }
   }, [selectedPartner, partnerAgencyForm]);
@@ -1631,6 +1638,41 @@ export default function SuperAdmin() {
                           <FormControl>
                             <Input placeholder="(11) 99999-9999" {...field} />
                           </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    {/* Campos de autenticação */}
+                    <FormField
+                      control={partnerAgencyForm.control}
+                      name="username"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Nome de Usuário</FormLabel>
+                          <FormControl>
+                            <Input placeholder="usuarioagencia" {...field} />
+                          </FormControl>
+                          <FormDescription>
+                            Nome de usuário para acesso ao sistema
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={partnerAgencyForm.control}
+                      name="password"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Senha</FormLabel>
+                          <FormControl>
+                            <Input type="password" placeholder="••••••••" {...field} />
+                          </FormControl>
+                          <FormDescription>
+                            Senha com pelo menos 6 caracteres
+                          </FormDescription>
                           <FormMessage />
                         </FormItem>
                       )}
