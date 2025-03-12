@@ -520,18 +520,21 @@ export default function SuperAdmin() {
       </div>
 
       <Tabs defaultValue="settings" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="settings" className="flex items-center gap-2">
             <Settings className="h-4 w-4" /> Configurações
           </TabsTrigger>
           <TabsTrigger value="pricing" className="flex items-center gap-2">
             <DollarSign className="h-4 w-4" /> Preços
           </TabsTrigger>
+          <TabsTrigger value="organizations" className="flex items-center gap-2">
+            <Globe className="h-4 w-4" /> Empresas
+          </TabsTrigger>
           <TabsTrigger value="partners" className="flex items-center gap-2">
-            <Users className="h-4 w-4" /> Agências Parceiras
+            <Users className="h-4 w-4" /> Parceiros
           </TabsTrigger>
           <TabsTrigger value="payment" className="flex items-center gap-2">
-            <CreditCard className="h-4 w-4" /> Integrações de Pagamento
+            <CreditCard className="h-4 w-4" /> Pagamentos
           </TabsTrigger>
         </TabsList>
 
@@ -768,6 +771,562 @@ export default function SuperAdmin() {
           </Card>
         </TabsContent>
 
+        {/* Aba de Configuração de Preços */}
+        <TabsContent value="pricing">
+          <Card>
+            <CardHeader>
+              <CardTitle>Configuração de Preços dos Planos</CardTitle>
+              <CardDescription>
+                Defina os preços e limites de cada plano disponível na plataforma
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {isLoadingPricing ? (
+                <div className="flex justify-center py-8">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                </div>
+              ) : (
+                <Form {...pricingForm}>
+                  <form onSubmit={pricingForm.handleSubmit(handleSavePricing)} className="space-y-8">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                      {/* Plano Free */}
+                      <Card className="border-2 border-gray-200 overflow-hidden relative">
+                        <div className="absolute top-0 right-0 left-0 h-1 bg-gray-300"></div>
+                        <CardHeader>
+                          <CardTitle className="flex items-center justify-between">
+                            <span>Plano Free</span>
+                            <FormField
+                              control={pricingForm.control}
+                              name="free.enabled"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormControl>
+                                    <Switch
+                                      checked={field.value}
+                                      onCheckedChange={field.onChange}
+                                    />
+                                  </FormControl>
+                                </FormItem>
+                              )}
+                            />
+                          </CardTitle>
+                          <CardDescription>
+                            Plano gratuito limitado
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          <FormField
+                            control={pricingForm.control}
+                            name="free.price"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Preço (R$)</FormLabel>
+                                <FormControl>
+                                  <Input type="number" min="0" step="0.01" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={pricingForm.control}
+                            name="free.description"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Descrição</FormLabel>
+                                <FormControl>
+                                  <Input {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={pricingForm.control}
+                            name="free.features"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Recursos</FormLabel>
+                                <FormControl>
+                                  <Textarea {...field} rows={3} />
+                                </FormControl>
+                                <FormDescription>
+                                  Lista de recursos separados por vírgula
+                                </FormDescription>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <div className="grid grid-cols-3 gap-2">
+                            <FormField
+                              control={pricingForm.control}
+                              name="free.maxProjects"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Projetos</FormLabel>
+                                  <FormControl>
+                                    <Input type="number" min="1" {...field} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <FormField
+                              control={pricingForm.control}
+                              name="free.maxUsers"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Usuários</FormLabel>
+                                  <FormControl>
+                                    <Input type="number" min="1" {...field} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <FormField
+                              control={pricingForm.control}
+                              name="free.maxStorage"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>MB</FormLabel>
+                                  <FormControl>
+                                    <Input type="number" min="1" {...field} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      {/* Plano Starter */}
+                      <Card className="border-2 border-blue-200 overflow-hidden relative">
+                        <div className="absolute top-0 right-0 left-0 h-1 bg-blue-500"></div>
+                        <CardHeader>
+                          <CardTitle className="flex items-center justify-between">
+                            <span>Plano Starter</span>
+                            <FormField
+                              control={pricingForm.control}
+                              name="starter.enabled"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormControl>
+                                    <Switch
+                                      checked={field.value}
+                                      onCheckedChange={field.onChange}
+                                    />
+                                  </FormControl>
+                                </FormItem>
+                              )}
+                            />
+                          </CardTitle>
+                          <CardDescription>
+                            Para startups e pequenas equipes
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          <FormField
+                            control={pricingForm.control}
+                            name="starter.price"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Preço (R$)</FormLabel>
+                                <FormControl>
+                                  <Input type="number" min="0" step="0.01" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={pricingForm.control}
+                            name="starter.description"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Descrição</FormLabel>
+                                <FormControl>
+                                  <Input {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={pricingForm.control}
+                            name="starter.features"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Recursos</FormLabel>
+                                <FormControl>
+                                  <Textarea {...field} rows={3} />
+                                </FormControl>
+                                <FormDescription>
+                                  Lista de recursos separados por vírgula
+                                </FormDescription>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <div className="grid grid-cols-3 gap-2">
+                            <FormField
+                              control={pricingForm.control}
+                              name="starter.maxProjects"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Projetos</FormLabel>
+                                  <FormControl>
+                                    <Input type="number" min="1" {...field} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <FormField
+                              control={pricingForm.control}
+                              name="starter.maxUsers"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Usuários</FormLabel>
+                                  <FormControl>
+                                    <Input type="number" min="1" {...field} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <FormField
+                              control={pricingForm.control}
+                              name="starter.maxStorage"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>MB</FormLabel>
+                                  <FormControl>
+                                    <Input type="number" min="1" {...field} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      {/* Plano Professional */}
+                      <Card className="border-2 border-purple-200 overflow-hidden relative">
+                        <div className="absolute top-0 right-0 left-0 h-1 bg-purple-500"></div>
+                        <CardHeader>
+                          <CardTitle className="flex items-center justify-between">
+                            <span>Plano Pro</span>
+                            <FormField
+                              control={pricingForm.control}
+                              name="professional.enabled"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormControl>
+                                    <Switch
+                                      checked={field.value}
+                                      onCheckedChange={field.onChange}
+                                    />
+                                  </FormControl>
+                                </FormItem>
+                              )}
+                            />
+                          </CardTitle>
+                          <CardDescription>
+                            Para empresas em crescimento
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          <FormField
+                            control={pricingForm.control}
+                            name="professional.price"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Preço (R$)</FormLabel>
+                                <FormControl>
+                                  <Input type="number" min="0" step="0.01" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={pricingForm.control}
+                            name="professional.description"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Descrição</FormLabel>
+                                <FormControl>
+                                  <Input {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={pricingForm.control}
+                            name="professional.features"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Recursos</FormLabel>
+                                <FormControl>
+                                  <Textarea {...field} rows={3} />
+                                </FormControl>
+                                <FormDescription>
+                                  Lista de recursos separados por vírgula
+                                </FormDescription>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <div className="grid grid-cols-3 gap-2">
+                            <FormField
+                              control={pricingForm.control}
+                              name="professional.maxProjects"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Projetos</FormLabel>
+                                  <FormControl>
+                                    <Input type="number" min="1" {...field} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <FormField
+                              control={pricingForm.control}
+                              name="professional.maxUsers"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Usuários</FormLabel>
+                                  <FormControl>
+                                    <Input type="number" min="1" {...field} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <FormField
+                              control={pricingForm.control}
+                              name="professional.maxStorage"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>MB</FormLabel>
+                                  <FormControl>
+                                    <Input type="number" min="1" {...field} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      {/* Plano Enterprise */}
+                      <Card className="border-2 border-green-200 overflow-hidden relative">
+                        <div className="absolute top-0 right-0 left-0 h-1 bg-green-500"></div>
+                        <CardHeader>
+                          <CardTitle className="flex items-center justify-between">
+                            <span>Enterprise</span>
+                            <FormField
+                              control={pricingForm.control}
+                              name="enterprise.enabled"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormControl>
+                                    <Switch
+                                      checked={field.value}
+                                      onCheckedChange={field.onChange}
+                                    />
+                                  </FormControl>
+                                </FormItem>
+                              )}
+                            />
+                          </CardTitle>
+                          <CardDescription>
+                            Para grandes empresas
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          <FormField
+                            control={pricingForm.control}
+                            name="enterprise.price"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Preço (R$)</FormLabel>
+                                <FormControl>
+                                  <Input type="number" min="0" step="0.01" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={pricingForm.control}
+                            name="enterprise.description"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Descrição</FormLabel>
+                                <FormControl>
+                                  <Input {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={pricingForm.control}
+                            name="enterprise.features"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Recursos</FormLabel>
+                                <FormControl>
+                                  <Textarea {...field} rows={3} />
+                                </FormControl>
+                                <FormDescription>
+                                  Lista de recursos separados por vírgula
+                                </FormDescription>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <div className="grid grid-cols-3 gap-2">
+                            <FormField
+                              control={pricingForm.control}
+                              name="enterprise.maxProjects"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Projetos</FormLabel>
+                                  <FormControl>
+                                    <Input type="number" min="1" {...field} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <FormField
+                              control={pricingForm.control}
+                              name="enterprise.maxUsers"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Usuários</FormLabel>
+                                  <FormControl>
+                                    <Input type="number" min="1" {...field} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <FormField
+                              control={pricingForm.control}
+                              name="enterprise.maxStorage"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>MB</FormLabel>
+                                  <FormControl>
+                                    <Input type="number" min="1" {...field} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
+                    <Button
+                      type="submit"
+                      className="w-full md:w-auto bg-gradient-to-r from-primary to-purple-600"
+                      disabled={savePricingMutation.isPending}
+                    >
+                      {savePricingMutation.isPending && (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      )}
+                      Salvar Configurações de Preços
+                    </Button>
+                  </form>
+                </Form>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        {/* Aba para Gestão de Empresas/Organizações */}
+        <TabsContent value="organizations">
+          <Card>
+            <CardHeader>
+              <CardTitle>Gestão de Empresas</CardTitle>
+              <CardDescription>
+                Gerencie todas as empresas cadastradas na plataforma
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Nome</TableHead>
+                      <TableHead>Admin</TableHead>
+                      <TableHead>Plano</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Data de Registro</TableHead>
+                      <TableHead>Usuários</TableHead>
+                      <TableHead className="text-right">Ações</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    <TableRow>
+                      <TableCell className="font-medium">Pasa LTDA</TableCell>
+                      <TableCell>Rodrigo</TableCell>
+                      <TableCell>
+                        <span className="px-2 py-1 rounded-full text-xs bg-green-100 text-green-800">Professional</span>
+                      </TableCell>
+                      <TableCell>
+                        <span className="px-2 py-1 rounded-full text-xs bg-green-100 text-green-800">Ativo</span>
+                      </TableCell>
+                      <TableCell>12/03/2025</TableCell>
+                      <TableCell>3</TableCell>
+                      <TableCell className="text-right">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" className="h-8 w-8 p-0">
+                              <span className="sr-only">Abrir menu</span>
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuLabel>Ações</DropdownMenuLabel>
+                            <DropdownMenuItem>
+                              <Edit className="mr-2 h-4 w-4" />
+                              Editar Empresa
+                            </DropdownMenuItem>
+                            <DropdownMenuItem>
+                              <Users className="mr-2 h-4 w-4" />
+                              Gerenciar Usuários
+                            </DropdownMenuItem>
+                            <DropdownMenuItem>
+                              <RefreshCw className="mr-2 h-4 w-4" />
+                              Alterar Plano
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem className="text-red-600">
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              Suspender Acesso
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
         {/* Aba de Agências Parceiras */}
         <TabsContent value="partners">
           <Card>
