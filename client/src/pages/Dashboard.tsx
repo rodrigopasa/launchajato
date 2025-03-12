@@ -199,8 +199,8 @@ export default function Dashboard() {
       <div className="mb-8">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold text-gray-800">Projetos em Andamento</h3>
-          <Link href="/projects">
-            <a className="text-sm text-primary font-medium hover:text-indigo-700">Ver todos</a>
+          <Link href="/projects" className="text-sm text-primary font-medium hover:text-indigo-700">
+            Ver todos
           </Link>
         </div>
 
@@ -331,12 +331,12 @@ export default function Dashboard() {
                 <div className="h-8 w-1 bg-gradient-to-b from-yellow-500 to-primary rounded-full mr-3"></div>
                 <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200">Tarefas Próximas</h3>
               </div>
-              <Link href="/tasks">
-                <Button variant="ghost" size="sm" className="text-primary hover:text-indigo-700 hover:bg-indigo-50 dark:hover:bg-gray-700">
+              <Button variant="ghost" size="sm" className="text-primary hover:text-indigo-700 hover:bg-indigo-50 dark:hover:bg-gray-700" asChild>
+                <Link href="/tasks">
                   <Plus className="h-4 w-4 mr-1" />
                   Nova Tarefa
-                </Button>
-              </Link>
+                </Link>
+              </Button>
             </div>
             <div className="p-5">
               {tasksLoading ? (
@@ -389,11 +389,11 @@ export default function Dashboard() {
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.5, ...transitions.default }}
                 >
-                  <Link href="/tasks">
-                    <Button variant="link" size="sm" className="text-primary hover:text-indigo-700">
+                  <Button variant="link" size="sm" className="text-primary hover:text-indigo-700" asChild>
+                    <Link href="/tasks">
                       Ver todas as tarefas
-                    </Button>
-                  </Link>
+                    </Link>
+                  </Button>
                 </motion.div>
               )}
             </div>
