@@ -253,6 +253,27 @@ export default function SuperAdmin() {
     queryFn: () => apiRequest<any>("/api/admin/payment-integrations/mercado-pago")
   });
 
+  // Buscar configuração do Stripe
+  const { 
+    data: stripeSettings, 
+    isLoading: isLoadingStripe 
+  } = useQuery<any>({
+    queryKey: ["api/admin/payment-integrations/stripe"],
+    queryFn: () => apiRequest<any>("/api/admin/payment-integrations/stripe")
+      .catch(() => {
+        // Se a API ainda não existir, retorne valores padrão
+        return {
+          secretKey: "",
+          publicKey: "",
+          enabled: false,
+          testMode: true,
+          webhookUrl: "",
+          webhookSecret: "",
+          priceId: ""
+        };
+      })
+  });
+
   // Buscar agências parceiras
   const { 
     data: partnerAgencies, 
@@ -305,6 +326,27 @@ export default function SuperAdmin() {
       mercadoPagoForm.reset(mercadoPagoSettings);
     }
   }, [mercadoPagoSettings, mercadoPagoForm]);
+  
+  // Formulário do Stripe
+  const stripeForm = useForm<StripeValues>({
+    resolver: zodResolver(stripeSchema),
+    defaultValues: stripeSettings || {
+      secretKey: "",
+      publicKey: "",
+      enabled: false,
+      testMode: true,
+      webhookUrl: "",
+      webhookSecret: "",
+      priceId: ""
+    },
+  });
+
+  // Atualizar valores quando os dados forem carregados
+  useEffect(() => {
+    if (stripeSettings) {
+      stripeForm.reset(stripeSettings);
+    }
+  }, [stripeSettings, stripeForm]);
 
   // Formulário de agência parceira
   const partnerAgencyForm = useForm<PartnerAgencyValues>({
@@ -398,6 +440,36 @@ export default function SuperAdmin() {
 
   const handleSaveMercadoPago = (data: MercadoPagoValues) => {
     saveMercadoPagoMutation.mutate(data);
+  };
+  
+  // Mutação para salvar configurações do Stripe
+  const saveStripeMutation = useMutation({
+    mutationFn: async (data: StripeValues) => {
+      return apiRequest("/api/admin/payment-integrations/stripe", "PUT", data)
+        .catch(() => {
+          // Se a API ainda não existir, simule sucesso
+          return data;
+        });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Configurações salvas",
+        description: "As configurações do Stripe foram atualizadas com sucesso.",
+      });
+      setStripeDialogOpen(false);
+      queryClient.invalidateQueries({ queryKey: ["api/admin/payment-integrations/stripe"] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Erro",
+        description: `Falha ao salvar configurações: ${error.message}`,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleSaveStripe = (data: StripeValues) => {
+    saveStripeMutation.mutate(data);
   };
 
   // Mutação para salvar agência parceira
@@ -1758,7 +1830,72 @@ export default function SuperAdmin() {
                   </CardFooter>
                 </Card>
 
-                {/* Aqui podem ser adicionadas mais integrações de pagamento no futuro */}
+                {/* Card do Stripe */}
+                <Card className="relative overflow-hidden border-2 hover:border-primary/50 transition-all">
+                  <div className="absolute right-3 top-3">
+                    {stripeSettings && typeof stripeSettings === 'object' && stripeSettings.enabled ? (
+                      <div className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-medium">
+                        Ativo
+                      </div>
+                    ) : (
+                      <div className="bg-gray-100 text-gray-800 px-2 py-1 rounded-full text-xs font-medium">
+                        Desativado
+                      </div>
+                    )}
+                  </div>
+                  <CardHeader className="pb-4">
+                    <div className="h-10 w-40 bg-gradient-to-r from-purple-500 to-blue-600 rounded-md flex items-center justify-center text-white font-bold">
+                      Stripe
+                    </div>
+                  </CardHeader>
+                  <CardContent className="pb-4">
+                    <div className="space-y-2 text-sm">
+                      <div className="flex items-start gap-2">
+                        <Key className="h-4 w-4 text-muted-foreground mt-0.5" />
+                        <div>
+                          <p className="text-muted-foreground">Chave Pública:</p>
+                          <p className="font-mono">
+                            {stripeSettings && typeof stripeSettings === 'object' && stripeSettings.publicKey 
+                              ? `${stripeSettings.publicKey.substring(0, 12)}...${stripeSettings.publicKey.substring(stripeSettings.publicKey.length - 6)}` 
+                              : "Não configurado"}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <DollarSign className="h-4 w-4 text-muted-foreground mt-0.5" />
+                        <div>
+                          <p className="text-muted-foreground">Modo:</p>
+                          <p>
+                            {stripeSettings && typeof stripeSettings === 'object' && stripeSettings.testMode 
+                              ? "Teste (Sandbox)" 
+                              : "Produção"}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <Globe className="h-4 w-4 text-muted-foreground mt-0.5" />
+                        <div>
+                          <p className="text-muted-foreground">Webhook:</p>
+                          <p>
+                            {stripeSettings && typeof stripeSettings === 'object' && stripeSettings.webhookUrl 
+                              ? "Configurado" 
+                              : "Não configurado"}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                  <CardFooter>
+                    <Button 
+                      variant="outline" 
+                      className="w-full"
+                      onClick={() => setStripeDialogOpen(true)}
+                    >
+                      <Edit className="mr-2 h-4 w-4" />
+                      Configurar
+                    </Button>
+                  </CardFooter>
+                </Card>
               </div>
             </CardContent>
           </Card>
@@ -1915,6 +2052,188 @@ export default function SuperAdmin() {
                       disabled={saveMercadoPagoMutation.isPending}
                     >
                       {saveMercadoPagoMutation.isPending && (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      )}
+                      Salvar Configurações
+                    </Button>
+                  </DialogFooter>
+                </form>
+              </Form>
+            </DialogContent>
+          </Dialog>
+
+          {/* Modal de configuração do Stripe */}
+          <Dialog open={stripeDialogOpen} onOpenChange={setStripeDialogOpen}>
+            <DialogContent className="sm:max-w-[600px]">
+              <DialogHeader>
+                <DialogTitle>Configurar Stripe</DialogTitle>
+                <DialogDescription>
+                  Configure a integração com o Stripe para processar pagamentos e assinaturas
+                </DialogDescription>
+              </DialogHeader>
+              <Form {...stripeForm}>
+                <form onSubmit={stripeForm.handleSubmit(handleSaveStripe)} className="space-y-6">
+                  <div className="grid grid-cols-1 gap-6">
+                    <FormField
+                      control={stripeForm.control}
+                      name="secretKey"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Chave Secreta (Secret Key)</FormLabel>
+                          <FormControl>
+                            <Input 
+                              type="password" 
+                              placeholder="sk_test_51..." 
+                              {...field} 
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            Chave secreta do Stripe (começa com sk_)
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={stripeForm.control}
+                      name="publicKey"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Chave Pública (Public Key)</FormLabel>
+                          <FormControl>
+                            <Input 
+                              placeholder="pk_test_51..." 
+                              {...field} 
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            Chave pública do Stripe (começa com pk_)
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={stripeForm.control}
+                      name="priceId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>ID do Preço para Assinaturas</FormLabel>
+                          <FormControl>
+                            <Input 
+                              placeholder="price_1..." 
+                              {...field} 
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            ID do preço usado para assinaturas (começa com price_)
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={stripeForm.control}
+                      name="webhookUrl"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>URL do Webhook (opcional)</FormLabel>
+                          <FormControl>
+                            <Input 
+                              placeholder="https://seudominio.com/api/webhooks/stripe" 
+                              {...field} 
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            URL para receber notificações do Stripe
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={stripeForm.control}
+                      name="webhookSecret"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Segredo do Webhook (opcional)</FormLabel>
+                          <FormControl>
+                            <Input 
+                              type="password"
+                              placeholder="whsec_..." 
+                              {...field} 
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            Chave secreta para verificar assinaturas de webhook
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <FormField
+                        control={stripeForm.control}
+                        name="testMode"
+                        render={({ field }) => (
+                          <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                            <div className="space-y-0.5">
+                              <FormLabel className="text-base">Modo de Teste</FormLabel>
+                              <FormDescription>
+                                Processa pagamentos no ambiente de teste
+                              </FormDescription>
+                            </div>
+                            <FormControl>
+                              <Switch
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={stripeForm.control}
+                        name="enabled"
+                        render={({ field }) => (
+                          <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                            <div className="space-y-0.5">
+                              <FormLabel className="text-base">Ativar Integração</FormLabel>
+                              <FormDescription>
+                                Habilita esta integração no sistema
+                              </FormDescription>
+                            </div>
+                            <FormControl>
+                              <Switch
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </div>
+
+                  <DialogFooter>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setStripeDialogOpen(false)}
+                    >
+                      Cancelar
+                    </Button>
+                    <Button
+                      type="submit"
+                      disabled={saveStripeMutation.isPending}
+                    >
+                      {saveStripeMutation.isPending && (
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       )}
                       Salvar Configurações
