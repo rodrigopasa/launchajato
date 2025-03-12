@@ -646,6 +646,122 @@ export class MemStorage implements IStorage {
 
 // Implementação do armazenamento com banco de dados PostgreSQL
 export class DatabaseStorage implements IStorage {
+  // Organization methods
+  async createOrganization(insertOrg: InsertOrganization): Promise<Organization> {
+    const [org] = await db.insert(organizations).values(insertOrg).returning();
+    return org;
+  }
+  
+  async getOrganization(id: number): Promise<Organization | undefined> {
+    const [org] = await db.select().from(organizations).where(eq(organizations.id, id));
+    return org;
+  }
+  
+  async updateOrganization(id: number, data: Partial<InsertOrganization>): Promise<Organization | undefined> {
+    const [updatedOrg] = await db
+      .update(organizations)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(organizations.id, id))
+      .returning();
+    return updatedOrg;
+  }
+  
+  // Organization Settings methods
+  async createOrganizationSettings(insertSettings: InsertOrganizationSettings): Promise<OrganizationSettings> {
+    const [settings] = await db
+      .insert(organizationSettings)
+      .values(insertSettings)
+      .returning();
+    return settings;
+  }
+  
+  async getOrganizationSettings(organizationId: number): Promise<OrganizationSettings | undefined> {
+    const [settings] = await db
+      .select()
+      .from(organizationSettings)
+      .where(eq(organizationSettings.organizationId, organizationId));
+    return settings;
+  }
+  
+  async updateOrganizationSettings(
+    organizationId: number, 
+    data: Partial<InsertOrganizationSettings>
+  ): Promise<OrganizationSettings | undefined> {
+    const [updatedSettings] = await db
+      .update(organizationSettings)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(organizationSettings.organizationId, organizationId))
+      .returning();
+    return updatedSettings;
+  }
+  
+  // Subscription methods
+  async createSubscription(insertSubscription: InsertSubscription): Promise<Subscription> {
+    const [subscription] = await db
+      .insert(subscriptions)
+      .values(insertSubscription)
+      .returning();
+    return subscription;
+  }
+  
+  async getSubscription(organizationId: number): Promise<Subscription | undefined> {
+    const [subscription] = await db
+      .select()
+      .from(subscriptions)
+      .where(eq(subscriptions.organizationId, organizationId));
+    return subscription;
+  }
+  
+  async updateSubscription(id: number, data: Partial<InsertSubscription>): Promise<Subscription | undefined> {
+    const [updatedSubscription] = await db
+      .update(subscriptions)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(subscriptions.id, id))
+      .returning();
+    return updatedSubscription;
+  }
+  
+  // Organization Members methods
+  async addOrganizationMember(insertMember: InsertOrganizationMember): Promise<OrganizationMember> {
+    const [member] = await db
+      .insert(organizationMembers)
+      .values(insertMember)
+      .returning();
+    return member;
+  }
+  
+  async getOrganizationMembers(organizationId: number): Promise<OrganizationMember[]> {
+    return db
+      .select()
+      .from(organizationMembers)
+      .where(eq(organizationMembers.organizationId, organizationId));
+  }
+  
+  async removeOrganizationMember(organizationId: number, userId: number): Promise<boolean> {
+    await db
+      .delete(organizationMembers)
+      .where(
+        and(
+          eq(organizationMembers.organizationId, organizationId),
+          eq(organizationMembers.userId, userId)
+        )
+      );
+    return true;
+  }
+  
+  async updateOrganizationMemberRole(organizationId: number, userId: number, role: string): Promise<boolean> {
+    await db
+      .update(organizationMembers)
+      .set({ role: role as any })
+      .where(
+        and(
+          eq(organizationMembers.organizationId, organizationId),
+          eq(organizationMembers.userId, userId)
+        )
+      );
+    return true;
+  }
+
   // User methods
   async getUser(id: number): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.id, id));
@@ -1048,8 +1164,11 @@ export class DatabaseStorage implements IStorage {
   }
 }
 
-// Substituir o armazenamento em memória pelo armazenamento de banco de dados
+// Para desenvolvimento, é possível alternar entre armazenamento em memória ou banco de dados
+// Usar MemStorage para desenvolvimento sem banco de dados
 // export const storage = new MemStorage();
+
+// Usar DatabaseStorage para produção com banco de dados PostgreSQL
 export const storage = new DatabaseStorage();
 
 // Inicializar o usuário admin se não existir
