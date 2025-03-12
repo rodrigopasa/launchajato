@@ -154,7 +154,7 @@ export default function SuperAdmin() {
     isLoading: isLoadingMercadoPago 
   } = useQuery({
     queryKey: ["api/admin/payment-integrations/mercado-pago"],
-    queryFn: () => apiRequest<MercadoPagoValues>("/api/admin/payment-integrations/mercado-pago")
+    queryFn: () => apiRequest("/api/admin/payment-integrations/mercado-pago")
   });
 
   // Buscar agências parceiras
@@ -163,7 +163,7 @@ export default function SuperAdmin() {
     isLoading: isLoadingPartners 
   } = useQuery({
     queryKey: ["api/admin/partner-agencies"],
-    queryFn: () => apiRequest<any[]>("/api/admin/partner-agencies")
+    queryFn: () => apiRequest("/api/admin/partner-agencies")
   });
 
   // Formulário de configurações do sistema
@@ -666,7 +666,7 @@ export default function SuperAdmin() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {partnerAgencies.map((agency) => (
+                    {partnerAgencies && Array.isArray(partnerAgencies) && partnerAgencies.map((agency) => (
                       <TableRow key={agency.id}>
                         <TableCell className="font-medium">{agency.name}</TableCell>
                         <TableCell>
@@ -979,7 +979,7 @@ export default function SuperAdmin() {
                 {/* Card do Mercado Pago */}
                 <Card className="relative overflow-hidden border-2 hover:border-primary/50 transition-all">
                   <div className="absolute right-3 top-3">
-                    {mercadoPagoSettings?.enabled ? (
+                    {mercadoPagoSettings && typeof mercadoPagoSettings === 'object' && mercadoPagoSettings.enabled ? (
                       <div className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-medium">
                         Ativo
                       </div>
@@ -1001,7 +1001,7 @@ export default function SuperAdmin() {
                         <div>
                           <p className="text-muted-foreground">Chave Pública:</p>
                           <p className="font-mono">
-                            {mercadoPagoSettings?.publicKey 
+                            {mercadoPagoSettings && typeof mercadoPagoSettings === 'object' && mercadoPagoSettings.publicKey 
                               ? `${mercadoPagoSettings.publicKey.substring(0, 12)}...${mercadoPagoSettings.publicKey.substring(mercadoPagoSettings.publicKey.length - 6)}` 
                               : "Não configurado"}
                           </p>
@@ -1012,7 +1012,7 @@ export default function SuperAdmin() {
                         <div>
                           <p className="text-muted-foreground">Modo:</p>
                           <p>
-                            {mercadoPagoSettings?.testMode 
+                            {mercadoPagoSettings && typeof mercadoPagoSettings === 'object' && mercadoPagoSettings.testMode 
                               ? "Teste (Sandbox)" 
                               : "Produção"}
                           </p>
@@ -1023,7 +1023,7 @@ export default function SuperAdmin() {
                         <div>
                           <p className="text-muted-foreground">Webhook:</p>
                           <p>
-                            {mercadoPagoSettings?.webhookUrl 
+                            {mercadoPagoSettings && typeof mercadoPagoSettings === 'object' && mercadoPagoSettings.webhookUrl 
                               ? "Configurado" 
                               : "Não configurado"}
                           </p>
