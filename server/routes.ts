@@ -742,6 +742,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const projectId = parseInt(req.params.projectId);
     
     try {
+      // Obter o projeto para associar à organização correta
+      const project = await storage.getProject(projectId);
+      if (!project) {
+        return res.status(404).json({ message: "Projeto não encontrado" });
+      }
+      
       // Converter strings de data para objetos Date
       const body = {...req.body};
       if (body.dueDate && typeof body.dueDate === 'string') {
@@ -750,8 +756,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const validatedData = insertTaskSchema.parse({
         ...body,
-        projectId
+        projectId,
+        organizationId: project.organizationId || 1, // Usa a organização do projeto ou default
+        createdBy: res.locals.user.id // Certifica que o criador é registrado
       });
+      
+      console.log("Dados de tarefa validados:", validatedData);
       
       const task = await storage.createTask(validatedData);
       
@@ -761,7 +771,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         projectId,
         action: "criou",
         subject: "uma nova tarefa",
-        details: task.name
+        details: task.name,
+        organizationId: project.organizationId || 1
       });
       
       res.status(201).json(task);

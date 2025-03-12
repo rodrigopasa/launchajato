@@ -205,21 +205,32 @@ export default function ProjectDetail() {
   // Create task mutation
   const createTaskMutation = useMutation({
     mutationFn: async (data: TaskFormValues) => {
-      const response = await apiRequest("POST", `/api/projects/${projectId}/tasks`, data);
-      return response.json();
+      try {
+        const taskData = {
+          ...data,
+          projectId: parseInt(projectId as string)
+        };
+        console.log("Enviando dados de tarefa:", taskData);
+        return await apiRequest("POST", `/api/projects/${projectId}/tasks`, taskData);
+      } catch (error) {
+        console.error("Erro na requisição de criação de tarefa:", error);
+        throw error;
+      }
     },
     onSuccess: () => {
       setIsNewTaskDialogOpen(false);
       queryClient.invalidateQueries({ queryKey: [`/api/projects/${projectId}/tasks`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/tasks`] });
       toast({
         title: "Tarefa criada",
         description: "A tarefa foi criada com sucesso",
       });
     },
-    onError: (error: Error) => {
+    onError: (error: any) => {
+      console.error("Detalhes do erro:", error);
       toast({
         title: "Erro ao criar tarefa",
-        description: error.message || "Ocorreu um erro ao criar a tarefa",
+        description: error.message || "Ocorreu um erro ao criar a tarefa. Verifique o console para mais detalhes.",
         variant: "destructive",
       });
     },
