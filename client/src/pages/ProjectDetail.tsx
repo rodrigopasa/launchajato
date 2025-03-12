@@ -442,7 +442,7 @@ export default function ProjectDetail() {
               <div className="flex items-center">
                 <Clock className="h-4 w-4 mr-2 text-gray-400" />
                 <span className="text-sm text-gray-700">
-                  {format(new Date(project.createdAt), "dd/MM/yyyy", { locale: ptBR })}
+                  {project.createdAt ? format(new Date(project.createdAt), "dd/MM/yyyy", { locale: ptBR }) : "Data indisponível"}
                 </span>
               </div>
             </div>
