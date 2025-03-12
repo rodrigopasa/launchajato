@@ -57,6 +57,7 @@ import { ptBR } from "date-fns/locale";
 import { useParams, Link } from "wouter";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
+import { useLocation } from "wouter";
 import { z } from "zod";
 import {
   Calendar,
@@ -111,6 +112,7 @@ export default function ProjectDetail() {
   const { id } = useParams();
   const projectId = parseInt(id || "0");
   const { toast } = useToast();
+  const [_, setLocation] = useLocation();
 
   const [isEditProjectDialogOpen, setIsEditProjectDialogOpen] = useState(false);
   const [isDeleteProjectDialogOpen, setIsDeleteProjectDialogOpen] = useState(false);
@@ -131,20 +133,22 @@ export default function ProjectDetail() {
 
   // Fetch project details
   const { data: project, isLoading: projectLoading } = useQuery({
-    queryKey: [`/api/projects/${projectId}`],
-    enabled: !isNaN(projectId),
+    queryKey: ['/api/projects', projectId],
+    enabled: !isNaN(projectId) && projectId > 0,
   });
 
   // Fetch project tasks
   const { data: tasks, isLoading: tasksLoading } = useQuery({
-    queryKey: [`/api/projects/${projectId}/tasks`],
-    enabled: !isNaN(projectId),
+    queryKey: ['/api/projects/tasks', projectId],
+    queryFn: () => apiRequest('GET', `/api/projects/${projectId}/tasks`),
+    enabled: !isNaN(projectId) && projectId > 0,
   });
 
   // Fetch project members
   const { data: members, isLoading: membersLoading } = useQuery({
-    queryKey: [`/api/projects/${projectId}/members`],
-    enabled: !isNaN(projectId),
+    queryKey: ['/api/projects/members', projectId],
+    queryFn: () => apiRequest('GET', `/api/projects/${projectId}/members`),
+    enabled: !isNaN(projectId) && projectId > 0,
   });
 
   // Fetch project activities
@@ -187,7 +191,7 @@ export default function ProjectDetail() {
         title: "Projeto excluído",
         description: "O projeto foi excluído com sucesso",
       });
-      window.location.href = "/projects";
+      setLocation("/projects");
     },
     onError: (error: Error) => {
       toast({
@@ -521,7 +525,7 @@ export default function ProjectDetail() {
                         dueDate={task.dueDate || new Date().toISOString()}
                         completed={task.status === "completed"}
                         onStatusChange={handleTaskStatusChange}
-                        onViewDetails={() => window.location.href = `/tasks/${task.id}`}
+                        onViewDetails={() => setLocation(`/tasks/${task.id}`)}
                       />
                     ))}
                   </div>

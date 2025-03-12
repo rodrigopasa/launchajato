@@ -129,8 +129,8 @@ export default function ProjectCard({
                   Excluir
                 </DropdownMenuItem>
               )}
-              <DropdownMenuItem onClick={() => window.location.href = `/projects/${id}`}>
-                Ver detalhes
+              <DropdownMenuItem asChild>
+                <Link href={`/projects/${id}`}>Ver detalhes</Link>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -192,14 +192,15 @@ export default function ProjectCard({
               </motion.div>
             )}
           </div>
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="text-primary text-sm font-medium hover:underline"
-            onClick={() => window.location.href = `/projects/${id}`}
-          >
-            Detalhes
-          </motion.button>
+          <Link href={`/projects/${id}`}>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="text-primary text-sm font-medium hover:underline"
+            >
+              Detalhes
+            </motion.button>
+          </Link>
         </div>
       </div>
     </motion.div>
