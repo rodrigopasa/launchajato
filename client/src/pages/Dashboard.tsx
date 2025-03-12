@@ -10,6 +10,7 @@ import ProjectCard from "@/components/dashboard/ProjectCard";
 import ActivityItem from "@/components/dashboard/ActivityItem";
 import TaskItem from "@/components/dashboard/TaskItem";
 import RocketAnimation from "@/components/dashboard/RocketAnimation";
+import { transitions } from "@/lib/animations";
 import { ProjectForm, type ProjectFormValues } from "@/components/projects/ProjectForm";
 import { Link } from "wouter";
 import { useState } from "react";
@@ -22,7 +23,10 @@ import {
   Plus,
   Filter,
   Loader2,
+  Activity,
+  ListChecks,
 } from "lucide-react";
+import { motion } from "framer-motion";
 
 export default function Dashboard() {
   const [isNewProjectDialogOpen, setIsNewProjectDialogOpen] = useState(false);
@@ -241,95 +245,160 @@ export default function Dashboard() {
       {/* Recent Activity and Tasks */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Recent Activity */}
-        <Card>
-          <div className="py-4 px-5 border-b border-gray-100">
-            <h3 className="text-lg font-semibold text-gray-800">Atividades Recentes</h3>
-          </div>
-          <div className="p-5">
-            {activitiesLoading ? (
-              <div className="flex justify-center items-center py-8">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2, ...transitions.default }}
+        >
+          <Card className="overflow-hidden shadow-md border-0 bg-white dark:bg-gray-800">
+            <div className="py-4 px-5 border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
+              <div className="flex items-center">
+                <div className="h-8 w-1 bg-gradient-to-b from-indigo-500 to-primary rounded-full mr-3"></div>
+                <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200">Atividades Recentes</h3>
               </div>
-            ) : !activities || activities.length === 0 ? (
-              <div className="text-center py-8">
-                <p className="text-gray-500">Nenhuma atividade recente</p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {activities.map((activity: any) => (
-                  <ActivityItem
-                    key={activity.id}
-                    user={{
-                      id: activity.user?.id || activity.userId,
-                      name: activity.user?.name || "Usuário",
-                      avatar: activity.user?.avatar,
-                    }}
-                    action={activity.action}
-                    subject={activity.subject}
-                    details={activity.details}
-                    time={activity.createdAt}
-                  />
-                ))}
-              </div>
-            )}
+            </div>
+            <div className="p-5">
+              {activitiesLoading ? (
+                <div className="flex justify-center items-center py-8">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                </div>
+              ) : !activitiesArray || activitiesArray.length === 0 ? (
+                <div className="text-center py-8">
+                  <motion.div
+                    initial={{ scale: 0.9, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={transitions.spring}
+                  >
+                    <div className="bg-gray-50 dark:bg-gray-800 p-5 rounded-lg">
+                      <div className="w-16 h-16 mx-auto bg-indigo-50 dark:bg-gray-700 rounded-full flex items-center justify-center mb-4">
+                        <Activity className="h-8 w-8 text-primary" />
+                      </div>
+                      <p className="text-gray-500 dark:text-gray-400">Nenhuma atividade recente</p>
+                      <p className="text-sm text-gray-400 dark:text-gray-500 mt-2">As atividades da equipe aparecerão aqui</p>
+                    </div>
+                  </motion.div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {activitiesArray.map((activity: any, index: number) => (
+                    <motion.div
+                      key={activity.id}
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: index * 0.1, ...transitions.default }}
+                    >
+                      <ActivityItem
+                        user={{
+                          id: activity.user?.id || activity.userId,
+                          name: activity.user?.name || "Usuário",
+                          avatar: activity.user?.avatar,
+                        }}
+                        action={activity.action}
+                        subject={activity.subject}
+                        details={activity.details}
+                        time={activity.createdAt}
+                      />
+                    </motion.div>
+                  ))}
+                </div>
+              )}
 
-            {!activitiesLoading && activities && activities.length > 0 && (
-              <div className="mt-4 text-center">
-                <Button variant="link" size="sm">
-                  Ver mais atividades
-                </Button>
-              </div>
-            )}
-          </div>
-        </Card>
+              {!activitiesLoading && activitiesArray && activitiesArray.length > 0 && (
+                <motion.div 
+                  className="mt-4 text-center"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.5, ...transitions.default }}
+                >
+                  <Button variant="link" size="sm" className="text-primary hover:text-indigo-700">
+                    Ver mais atividades
+                  </Button>
+                </motion.div>
+              )}
+            </div>
+          </Card>
+        </motion.div>
 
         {/* Upcoming Tasks */}
-        <Card>
-          <div className="py-4 px-5 border-b border-gray-100 flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-gray-800">Tarefas Próximas</h3>
-            <Link href="/tasks">
-              <Button variant="link" size="sm">
-                + Nova Tarefa
-              </Button>
-            </Link>
-          </div>
-          <div className="p-5">
-            {tasksLoading ? (
-              <div className="flex justify-center items-center py-8">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3, ...transitions.default }}
+        >
+          <Card className="overflow-hidden shadow-md border-0 bg-white dark:bg-gray-800">
+            <div className="py-4 px-5 border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 flex items-center justify-between">
+              <div className="flex items-center">
+                <div className="h-8 w-1 bg-gradient-to-b from-yellow-500 to-primary rounded-full mr-3"></div>
+                <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200">Tarefas Próximas</h3>
               </div>
-            ) : !upcomingTasks || upcomingTasks.length === 0 ? (
-              <div className="text-center py-8">
-                <p className="text-gray-500">Nenhuma tarefa pendente</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {upcomingTasks.map((task: any) => (
-                  <TaskItem
-                    key={task.id}
-                    id={task.id}
-                    name={task.name}
-                    priority={task.priority}
-                    project={"Project Name"} // Placeholder - in a real app, fetch project name
-                    dueDate={task.dueDate || new Date().toISOString()}
-                    completed={task.status === "completed"}
-                    onStatusChange={handleTaskStatusChange}
-                  />
-                ))}
-              </div>
-            )}
+              <Link href="/tasks">
+                <Button variant="ghost" size="sm" className="text-primary hover:text-indigo-700 hover:bg-indigo-50 dark:hover:bg-gray-700">
+                  <Plus className="h-4 w-4 mr-1" />
+                  Nova Tarefa
+                </Button>
+              </Link>
+            </div>
+            <div className="p-5">
+              {tasksLoading ? (
+                <div className="flex justify-center items-center py-8">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                </div>
+              ) : !upcomingTasks || upcomingTasks.length === 0 ? (
+                <div className="text-center py-8">
+                  <motion.div
+                    initial={{ scale: 0.9, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={transitions.spring}
+                  >
+                    <div className="bg-gray-50 dark:bg-gray-800 p-5 rounded-lg">
+                      <div className="w-16 h-16 mx-auto bg-indigo-50 dark:bg-gray-700 rounded-full flex items-center justify-center mb-4">
+                        <ListChecks className="h-8 w-8 text-primary" />
+                      </div>
+                      <p className="text-gray-500 dark:text-gray-400">Nenhuma tarefa pendente</p>
+                      <p className="text-sm text-gray-400 dark:text-gray-500 mt-2">Adicione tarefas para acompanhar seu progresso</p>
+                    </div>
+                  </motion.div>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {upcomingTasks.map((task: any, index: number) => (
+                    <motion.div
+                      key={task.id}
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: index * 0.1, ...transitions.default }}
+                    >
+                      <TaskItem
+                        id={task.id}
+                        name={task.name}
+                        priority={task.priority}
+                        project={task.projectName || "Projeto"}
+                        dueDate={task.dueDate || new Date().toISOString()}
+                        completed={task.status === "completed"}
+                        onStatusChange={handleTaskStatusChange}
+                      />
+                    </motion.div>
+                  ))}
+                </div>
+              )}
 
-            {!tasksLoading && upcomingTasks && upcomingTasks.length > 0 && (
-              <div className="mt-4 text-center">
-                <Link href="/tasks">
-                  <Button variant="link" size="sm">
-                    Ver todas as tarefas
-                  </Button>
-                </Link>
-              </div>
-            )}
-          </div>
-        </Card>
+              {!tasksLoading && upcomingTasks && upcomingTasks.length > 0 && (
+                <motion.div 
+                  className="mt-4 text-center"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.5, ...transitions.default }}
+                >
+                  <Link href="/tasks">
+                    <Button variant="link" size="sm" className="text-primary hover:text-indigo-700">
+                      Ver todas as tarefas
+                    </Button>
+                  </Link>
+                </motion.div>
+              )}
+            </div>
+          </Card>
+        </motion.div>
       </div>
 
       {/* New Project Dialog */}
