@@ -1,11 +1,55 @@
-node_modules
-npm-debug.log
-dist
+# Arquivos e diretórios que não precisam ser incluídos na imagem Docker
+
+# Arquivos de sistema
 .git
 .github
 .gitignore
+.DS_Store
 .env
 .env.*
-.cache
+!.env.example
+.editorconfig
+.vscode
+*.log
+*.swp
+*.swo
+
+# Node
+node_modules
+npm-debug.log
+yarn-debug.log
+yarn-error.log
+
+# Arquivos temporários e backups
+temp
+tmp
+*.tmp
+*.bak
+*.backup
+
+# Arquivos de testes
+test
+tests
+__tests__
+coverage
+.nyc_output
+
+# Documentação
+docs
+*.md
+!README.md
+
+# Arquivos de configuração específicos para desenvolvimento
+.eslintrc*
+.prettierrc*
+.babelrc*
+jest.config.*
+
+# Outros
+.replit
+*.example
+LICENSE
+
+# Volume de dados
 uploads/*
 !uploads/.gitkeep

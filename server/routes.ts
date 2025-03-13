@@ -2129,6 +2129,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Registrar rotas do WhatsApp Web
   app.use('/api/whatsapp-web', whatsappWebRoutes);
   
+  // Healthcheck endpoint para monitoramento
+  app.get("/api/health", async (req: Request, res: Response) => {
+    try {
+      // Verificar conexão com banco de dados
+      let dbStatus = false;
+      try {
+        await db.execute(sql`SELECT 1`);
+        dbStatus = true;
+      } catch (err) {
+        console.error("Erro na verificação do banco de dados:", err);
+        dbStatus = false;
+      }
+      
+      res.json({
+        status: "ok",
+        uptime: process.uptime(),
+        timestamp: Date.now(),
+        database: dbStatus ? "connected" : "disconnected",
+        environment: process.env.NODE_ENV
+      });
+    } catch (error) {
+      res.status(500).json({
+        status: "error",
+        message: "Erro ao verificar saúde do sistema",
+        error: String(error)
+      });
+    }
+  });
+
   // Inicializar o sistema de notificações do chatbot
   setupNotificationScheduler();
   
