@@ -22,16 +22,20 @@ if [ ! -d "/app/uploads" ]; then
 fi
 
 # Verificar e ajustar permissões da pasta uploads
-chmod -R 755 /app/uploads
+chmod -R 775 /app/uploads
 echo "Permissões do diretório de uploads ajustadas!"
 
 # Aguardar o banco de dados estar disponível
 echo "Aguardando conexão com o banco de dados..."
-max_retries=30
+max_retries=60  # Aumentando o número de tentativas
+sleep_time=3    # Aumentando o tempo entre as tentativas
 counter=0
-  
-while ! pg_isready -h "$(echo $DATABASE_URL | cut -d'@' -f2 | cut -d'/' -f1)" -q; do
-    sleep 2
+
+# Extraindo o host da URL do banco de dados
+host=$(echo $DATABASE_URL | sed -E 's/^postgres:\/\/[^:]+:[^@]+@([^:]+):[0-9]+\/.*/\1/')
+
+while ! pg_isready -h "$host" -q; do
+    sleep $sleep_time
     counter=$((counter+1))
     if [ $counter -ge $max_retries ]; then
         echo "ERRO: Impossível conectar ao banco de dados após $max_retries tentativas."
